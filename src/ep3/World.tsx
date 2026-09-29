@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
-import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
-import { CameraRig, Ps1Canvas, pixelTexture, useTextureSet, type Cam } from "../ps1kit";
+import { CameraRig, Ps1Canvas, pixelTexture, snapVertices, useTextureSet, type Cam } from "../ps1kit";
 import { DotaWorld } from "./Dota";
-import { clamp, ease, flat, hash, lam, smooth } from "./mat";
+import { clamp, ease, flat, hash, lam, puffTexture, smooth } from "./mat";
 import { FPS, isDota, type PcScene, type Scene3 } from "./script";
 
 // --- procedural textures -----------------------------------------------------------------
@@ -55,119 +55,175 @@ const matTex = () =>
 
 const PHOTO = ["soslan-photo"] as const;
 
-// --- the pale Monday: a doughy half-cooked dumpling hangs where the sun should be -------------
-const Pelmen: React.FC<{ s: number }> = ({ s }) => {
-  const m = useMemo(
-    () => ({
-      dough: smooth({ color: "#f4eedc", emissive: "#4a463a" }),
-      crimp: smooth({ color: "#faf6ea", emissive: "#4a463a" }),
-      raw: flat({ color: "#dcc4ba" }),
-      grey: flat({ color: "#d6d2c8" }),
-      halo: flat({ color: "#d6d6cc", fog: false }),
-    }),
-    [],
-  );
-  const geo = useMemo(() => {
-    const R = 1;
-    const shape = new THREE.Shape();
-    shape.moveTo(-R, 0);
-    shape.absarc(0, 0, R, Math.PI, 0, true);
-    shape.lineTo(-R, 0);
-    const g = new THREE.ExtrudeGeometry(shape, { depth: 0.35, bevelEnabled: true, bevelThickness: 0.42, bevelSize: 0.3, bevelSegments: 4, curveSegments: 22 });
-    g.translate(0, 0, -0.175);
-    return g;
-  }, []);
-  return (
-    <group position={[-0.2, 9.4 + s * 0.04, -12]} rotation={[0.1, 0.2 + Math.sin(s * 0.4) * 0.05, -0.1]} scale={2.9}>
-      <mesh material={m.halo} position={[0, 0.45, -0.6]}>
-        <circleGeometry args={[2.3, 20]} />
-      </mesh>
-      <mesh material={m.dough} geometry={geo} />
-      {Array.from({ length: 17 }).map((_, i) => {
-        const a = Math.PI - (i / 16) * Math.PI;
-        return (
-          <mesh key={i} material={m.crimp} position={[Math.cos(a) * 1.3, Math.sin(a) * 1.3 + 0.02, 0]} rotation={[0, 0, a]} scale={[0.7, 1, 0.45]}>
-            <sphereGeometry args={[0.16, 6, 4]} />
-          </mesh>
-        );
-      })}
-      {/* undercooked: the filling shows through the pale dough */}
-      <mesh material={m.raw} position={[0.1, 0.45, 0.61]} scale={[1, 0.55, 1]}>
-        <circleGeometry args={[0.42, 12]} />
-      </mesh>
-      <mesh material={m.grey} position={[-0.45, 0.25, 0.6]} scale={[1, 0.6, 1]}>
-        <circleGeometry args={[0.2, 10]} />
-      </mesh>
-    </group>
-  );
+// --- Monday morning still life: one pale, undercooked dumpling on a chipped enamel plate --------------------
+const oilclothTex = () => {
+  const t = pixelTexture(64, 64, (ctx) => {
+    ctx.fillStyle = "#e2d8c4";
+    ctx.fillRect(0, 0, 64, 64);
+    for (let y = 0; y < 64; y += 16)
+      for (let x = 0; x < 64; x += 16) {
+        ctx.fillStyle = (x + y) % 32 === 0 ? "#b0564a" : "#c89a86";
+        ctx.fillRect(x, y, 8, 8);
+        ctx.fillRect(x + 8, y + 8, 8, 8);
+      }
+    ctx.fillStyle = "#6e8a5c";
+    for (let y = 4; y < 64; y += 16) for (let x = 12; x < 64; x += 16) ctx.fillRect(x, y, 2, 2);
+    for (let i = 0; i < 90; i++) {
+      ctx.fillStyle = i % 2 ? "rgba(255,255,255,0.18)" : "rgba(60,40,30,0.12)";
+      ctx.fillRect(Math.floor(hash(i) * 64), Math.floor(hash(i + 40) * 64), 1 + Math.floor(hash(i + 80) * 3), 1);
+    }
+  });
+  t.wrapS = THREE.RepeatWrapping;
+  t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(6, 6);
+  return t;
 };
 
-const Rooftops: React.FC = () => {
-  const m = useMemo(
-    () => ({
-      walls: ["#8a90a0", "#9a9894", "#7e8698", "#a49e96"].map((c) => lam({ color: c })),
-      roof: ["#626a80", "#76666a", "#5e6a76"].map((c) => lam({ color: c })),
-      win: flat({ color: "#c2c8d0" }),
-      pole: lam({ color: "#5c6274" }),
-      wire: new THREE.LineBasicMaterial({ color: "#6a7084" }),
-    }),
-    [],
-  );
-  const houses = useMemo(
-    () =>
-      Array.from({ length: 13 }).map((_, i) => ({
-        x: -9 + i * 1.5 + (hash(i) - 0.5) * 0.6,
-        z: -3.5 - hash(i + 3) * 5,
-        w: 1.2 + hash(i + 7) * 0.9,
-        h: 2.2 + hash(i + 9) * 3.2,
-        gable: hash(i + 11) > 0.45,
-      })),
-    [],
-  );
-  const wire = useMemo(() => {
-    const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 24; i++) {
-      const u = i / 24;
-      pts.push(new THREE.Vector3(-4 + u * 8, 5.4 - Math.sin(u * Math.PI) * 0.6, -3));
+// the dumpling as a height field over a half-moon: rounded fold on the straight side, a thin crimped seam on the arc
+const pelmenGeo = () => {
+  const R = 0.4;
+  const T = 0.2;
+  const W = 0.06;
+  const NI = 36;
+  const NJ = 26;
+  const pos: number[] = [];
+  const col: number[] = [];
+  const idx: number[] = [];
+  const dough = new THREE.Color("#efe8da");
+  const grey = new THREE.Color("#cfccc4");
+  const pink = new THREE.Color("#dca498");
+  for (let i = 0; i <= NI; i++) {
+    const th = -Math.PI / 2 + (i / NI) * Math.PI;
+    const x = R * Math.sin(th) * 0.999;
+    const ex = Math.sqrt(Math.max(0, 1 - (x / R) ** 2));
+    const zmax = R * ex;
+    for (let j = 0; j <= NJ; j++) {
+      const u = (j / NJ) * 1.12;
+      const inner = Math.min(u, 1);
+      const z = -W + (zmax + W) * inner + (u > 1 ? (u - 1) * (0.55 + 0.25 * Math.sin(th * 24)) * R * ex + 0.004 : 0);
+      let y = T * Math.pow(ex, 0.7) * Math.pow(Math.sin(Math.PI * Math.pow(inner, 0.62)), 0.75);
+      if (u >= 1) y = 0.014 + 0.016 * Math.max(0, Math.sin(th * 24));
+      pos.push(x, y, z);
+      const c = dough.clone();
+      const n = 0.5 + 0.5 * Math.sin(x * 31 + z * 23) * Math.sin(z * 27 - x * 11);
+      c.lerp(grey, 0.5 * n * n + (u > 0.95 ? 0.25 : 0));
+      if (inner > 0.15 && inner < 0.7) c.lerp(pink, 0.7 * Math.sin(((inner - 0.15) / 0.55) * Math.PI) * Math.pow(ex, 0.5));
+      col.push(c.r, c.g, c.b);
     }
-    return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m.wire);
-  }, [m.wire]);
+  }
+  for (let i = 0; i < NI; i++)
+    for (let j = 0; j < NJ; j++) {
+      const a = i * (NJ + 1) + j;
+      const b = a + NJ + 1;
+      idx.push(a, a + 1, b, b, a + 1, b + 1);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+};
+
+const Kitchen: React.FC<{ s: number }> = ({ s }) => {
+  const m = useMemo(() => {
+    const puff = puffTexture();
+    return {
+      cloth: lam({ map: oilclothTex() }),
+      wall: lam({ color: "#8a94a0" }),
+      window: flat({ color: "#dfe6ee" }),
+      frame: lam({ color: "#a4acb4" }),
+      enamel: snapVertices(new THREE.MeshPhongMaterial({ color: "#cdd3d6", specular: "#6a6e72", shininess: 60 }), 2),
+      rim: snapVertices(new THREE.MeshPhongMaterial({ color: "#3c5c9c", specular: "#6a7aa0", shininess: 50 }), 2),
+      chip: flat({ color: "#3e4658" }),
+      water: flat({ color: "#dfe4e2", transparent: true, opacity: 0.45, depthWrite: false }),
+      dough: snapVertices(new THREE.MeshPhongMaterial({ vertexColors: true, specular: "#6a6660", shininess: 42, emissive: "#1a1612", side: THREE.DoubleSide }), 2),
+      steel: snapVertices(new THREE.MeshPhongMaterial({ color: "#b0b8c2", specular: "#ffffff", shininess: 90 }), 2),
+      steam: [0, 1, 2, 3, 4, 5, 6].map(() => new THREE.SpriteMaterial({ map: puff, transparent: true, depthWrite: false, color: "#eef2f6" })),
+    };
+  }, []);
+  const geos = useMemo(() => {
+    const plate = new THREE.LatheGeometry(
+      [
+        [0, 0.004],
+        [0.55, 0.004],
+        [0.62, 0.02],
+        [0.93, 0.095],
+        [1.0, 0.11],
+        [1.0, 0.125],
+        [0.95, 0.118],
+        [0.62, 0.04],
+        [0, 0.034],
+      ].map(([x, y]) => new THREE.Vector2(x, y)),
+      40,
+    );
+    return { plate, pelmen: pelmenGeo() };
+  }, []);
   return (
     <group>
-      {houses.map((hs, i) => (
-        <group key={i} position={[hs.x, 0, hs.z]}>
-          <mesh material={m.walls[i % 4]} position={[0, hs.h / 2, 0]}>
-            <boxGeometry args={[hs.w, hs.h, 1.4]} />
+      <mesh material={m.cloth} position={[0, -0.02, -0.2]}>
+        <boxGeometry args={[4.5, 0.04, 3.6]} />
+      </mesh>
+      <mesh material={m.wall} position={[0, 1.1, -1.9]}>
+        <boxGeometry args={[6, 2.4, 0.05]} />
+      </mesh>
+      <mesh material={m.window} position={[-0.35, 1.25, -1.86]}>
+        <planeGeometry args={[1.5, 1.1]} />
+      </mesh>
+      <mesh material={m.frame} position={[-0.35, 1.25, -1.85]}>
+        <boxGeometry args={[0.05, 1.1, 0.02]} />
+      </mesh>
+      <mesh material={m.frame} position={[-0.35, 1.3, -1.85]}>
+        <boxGeometry args={[1.5, 0.05, 0.02]} />
+      </mesh>
+      {/* chipped enamel plate with a little cloudy water */}
+      <group scale={0.95}>
+        <mesh material={m.enamel} geometry={geos.plate} />
+        <mesh material={m.rim} position={[0, 0.123, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.985, 0.014, 4, 40]} />
+        </mesh>
+        {[0.6, 2.3, 4.1].map((a, i) => (
+          <mesh key={i} material={m.chip} position={[Math.cos(a) * 0.96, 0.117, Math.sin(a) * 0.96]} rotation={[-Math.PI / 2 + 0.25, 0, a]}>
+            <circleGeometry args={[0.035 + i * 0.01, 5]} />
           </mesh>
-          {hs.gable ? (
-            <mesh material={m.roof[i % 3]} position={[0, hs.h + 0.35, 0]} rotation={[0, 0, 0]} scale={[hs.w * 0.62, 0.7, 1.45]}>
-              <cylinderGeometry args={[1, 1, 1, 3]} />
-            </mesh>
-          ) : (
-            <>
-              <mesh material={m.pole} position={[hs.w * 0.2, hs.h + 0.6, 0]}>
-                <cylinderGeometry args={[0.02, 0.02, 1.2, 4]} />
-              </mesh>
-              <mesh material={m.pole} position={[hs.w * 0.2, hs.h + 1.0, 0]}>
-                <boxGeometry args={[0.6, 0.03, 0.03]} />
-              </mesh>
-              <mesh material={m.pole} position={[hs.w * 0.2, hs.h + 0.8, 0]}>
-                <boxGeometry args={[0.4, 0.03, 0.03]} />
-              </mesh>
-            </>
-          )}
-          {[0, 1, 2].map((r) =>
-            [-1, 1].map((c) =>
-              hs.h - 0.8 - r * 0.9 > 0.4 ? (
-                <mesh key={`${r}${c}`} material={m.win} position={[c * hs.w * 0.22, hs.h - 0.8 - r * 0.9, 0.71]}>
-                  <planeGeometry args={[0.22, 0.34]} />
-                </mesh>
-              ) : null,
-            ),
-          )}
-        </group>
-      ))}
-      <primitive object={wire} />
+        ))}
+        <mesh material={m.chip} position={[0.3, 0.036, -0.28]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.022, 5]} />
+        </mesh>
+        <mesh material={m.water} position={[0, 0.042, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.52, 24]} />
+        </mesh>
+      </group>
+      {/* the dumpling */}
+      <group position={[0.0, 0.04, 0.0]} rotation={[0, 2.75, 0]}>
+        <mesh material={m.dough} geometry={geos.pelmen} />
+      </group>
+      {/* fork */}
+      <group position={[1.12, 0.012, 0.15]} rotation={[0, 0.35, 0]}>
+        <mesh material={m.steel} position={[0, 0, 0.3]}>
+          <boxGeometry args={[0.07, 0.014, 0.7]} />
+        </mesh>
+        <mesh material={m.steel} position={[0, 0.004, -0.1]}>
+          <boxGeometry args={[0.12, 0.012, 0.12]} />
+        </mesh>
+        {[-0.045, -0.015, 0.015, 0.045].map((x) => (
+          <mesh key={x} material={m.steel} position={[x, 0.004, -0.27]}>
+            <boxGeometry args={[0.016, 0.01, 0.24]} />
+          </mesh>
+        ))}
+      </group>
+      {/* steam: soft puffs that rise, swell and fade */}
+      {m.steam.map((mat, i) => {
+        const k = (((s * 0.22 + i / m.steam.length) % 1) + 1) % 1;
+        mat.opacity = Math.sin(k * Math.PI) * 0.4;
+        const sc = 0.18 + k * 0.5;
+        return (
+          <sprite key={i} material={mat} position={[Math.sin(k * 3 + i * 1.7) * 0.1 + k * 0.12, 0.3 + k * 1.0, -0.05 + Math.cos(i) * 0.06]} scale={[sc, sc * 1.3, 1]} />
+        );
+      })}
+      <ambientLight intensity={1.3} color="#8a96ae" />
+      <directionalLight position={[-2.2, 3, -2.5]} intensity={1.7} color="#dce6f4" />
+      <directionalLight position={[2, 1.5, 2]} intensity={0.7} color="#b0b8c8" />
     </group>
   );
 };
@@ -272,32 +328,102 @@ const DustBall: React.FC<{ s: number; r?: number }> = ({ s, r = 0.05 }) => {
   );
 };
 
-// a dust mite: pale oval, eight legs, a small head; `lean` tips it towards whoever it talks to
-const Mite: React.FC<{ x: number; z: number; yaw: number; lean: number; s: number; k: number }> = ({ x, z, yaw, lean, s, k }) => {
-  const m = useMemo(() => ({ body: smooth({ color: "#ecd2c0" }), leg: lam({ color: "#8a6450" }), eye: flat({ color: "#3a4058" }) }), []);
-  const breathe = 1 + 0.04 * Math.sin(s * 3 + k);
+// a mite as a proper little arthropod: glossy dark segmented body, shield, tiny head, eight jointed legs
+const LEG = new THREE.Vector3(0, 1, 0);
+const Seg: React.FC<{ a: THREE.Vector3; b: THREE.Vector3; r: number; material: THREE.Material }> = ({ a, b, r, material }) => {
+  const d = b.clone().sub(a);
+  const q = new THREE.Quaternion().setFromUnitVectors(LEG, d.clone().normalize());
   return (
-    <group position={[x, 0, z]} rotation={[0, yaw, 0]}>
-      <group rotation={[lean, 0, 0]} position={[0, 0.02, 0]}>
-        <mesh material={m.body} position={[0, 0.022, -0.01]} scale={[1, 0.75 * breathe, 1.3]}>
-          <sphereGeometry args={[0.022, 8, 6]} />
+    <group position={a.clone().add(b).multiplyScalar(0.5)} quaternion={q}>
+      <mesh material={material}>
+        <cylinderGeometry args={[r * 0.8, r, d.length(), 5]} />
+      </mesh>
+      <mesh material={material} position={[0, d.length() / 2, 0]}>
+        <sphereGeometry args={[r * 1.1, 5, 4]} />
+      </mesh>
+    </group>
+  );
+};
+
+const Tick: React.FC<{ x: number; z: number; yaw: number; lean: number; s: number; k: number; size: number }> = ({ x, z, yaw, lean, s, k, size }) => {
+  const m = useMemo(
+    () => ({
+      body: snapVertices(new THREE.MeshPhongMaterial({ color: "#5e3a32", specular: "#e0b8a0", shininess: 80 }), 2),
+      shield: snapVertices(new THREE.MeshPhongMaterial({ color: "#8a5638", specular: "#ffd8b0", shininess: 90 }), 2),
+      groove: flat({ color: "#3c2a2c" }),
+      leg: snapVertices(new THREE.MeshPhongMaterial({ color: "#6a4a3e", specular: "#c89a80", shininess: 50 }), 2),
+    }),
+    [],
+  );
+  const legs = [0.62, 0.22, -0.2, -0.6].flatMap((ang, i) =>
+    [-1, 1].map((sd) => {
+      const az = 0.3 - i * 0.17;
+      const dir = new THREE.Vector3(sd * Math.cos(ang), 0, Math.sin(ang));
+      const lift = 0.04 * Math.sin(s * 3 + i * 1.3 + sd + k);
+      const hip = new THREE.Vector3(sd * 0.3, 0.3, az);
+      const knee = hip.clone().add(dir.clone().multiplyScalar(0.27)).add(new THREE.Vector3(0, 0.2 + lift, 0));
+      const ankle = hip.clone().add(dir.clone().multiplyScalar(0.52)).setY(0.07);
+      const foot = hip.clone().add(dir.clone().multiplyScalar(0.62)).setY(0.0);
+      return { key: `${i}${sd}`, hip, knee, ankle, foot };
+    }),
+  );
+  return (
+    <group position={[x, 0, z]} rotation={[0, yaw, 0]} scale={size}>
+      <group rotation={[lean, 0, 0]} position={[0, 0, 0]}>
+        <mesh material={m.body} position={[0, 0.3, -0.05]} scale={[0.8, 0.46 * (1 + 0.03 * Math.sin(s * 2.4 + k)), 1.0]}>
+          <sphereGeometry args={[0.5, 16, 12]} />
         </mesh>
-        <mesh material={m.body} position={[0, 0.03, 0.035]}>
-          <sphereGeometry args={[0.013, 6, 4]} />
+        {[-0.08, -0.25, -0.4].map((gz) => (
+          <mesh key={gz} material={m.groove} position={[0, 0.31, gz]} rotation={[0, 0, 0]} scale={[1, 0.62, 0.2]}>
+            <torusGeometry args={[0.35 - Math.abs(gz) * 0.25, 0.012, 4, 18, Math.PI]} />
+          </mesh>
+        ))}
+        <mesh material={m.shield} position={[0, 0.42, 0.24]} scale={[0.5, 0.18, 0.42]}>
+          <sphereGeometry args={[0.5, 12, 8]} />
+        </mesh>
+        <mesh material={m.shield} position={[0, 0.3, 0.52]} scale={[0.2, 0.13, 0.2]}>
+          <sphereGeometry args={[0.5, 8, 6]} />
         </mesh>
         {[-1, 1].map((sd) => (
-          <mesh key={sd} material={m.eye} position={[sd * 0.006, 0.036, 0.046]}>
-            <boxGeometry args={[0.004, 0.004, 0.004]} />
+          <mesh key={sd} material={m.leg} position={[sd * 0.05, 0.29, 0.66]} rotation={[Math.PI / 2 - 0.2, 0, 0]}>
+            <coneGeometry args={[0.03, 0.16, 4]} />
           </mesh>
         ))}
       </group>
-      {[-1, 1].map((sd) =>
-        [0, 1, 2, 3].map((i) => (
-          <mesh key={`${sd}${i}`} material={m.leg} position={[sd * 0.03, 0.012, 0.02 - i * 0.016]} rotation={[0, 0, sd * (1.1 + 0.1 * Math.sin(s * 2 + i + k))]}>
-            <cylinderGeometry args={[0.005, 0.003, 0.04, 3]} />
+      {legs.map((l) => (
+        <React.Fragment key={l.key}>
+          <Seg a={l.hip} b={l.knee} r={0.045} material={m.leg} />
+          <Seg a={l.knee} b={l.ankle} r={0.034} material={m.leg} />
+          <Seg a={l.ankle} b={l.foot} r={0.024} material={m.leg} />
+        </React.Fragment>
+      ))}
+    </group>
+  );
+};
+
+// a dust bunny: a loose clump of grey fibres
+const Fluff: React.FC<{ s: number; r: number }> = ({ s, r }) => {
+  const m = useMemo(() => [lam({ color: "#c6c2cc" }), lam({ color: "#a8a4b2" }), lam({ color: "#dad6de" })], []);
+  return (
+    <group rotation={[0, s * 0.1, 0]}>
+      <mesh material={m[1]} position={[0, r * 0.75, 0]} scale={[1, 0.8, 1]}>
+        <icosahedronGeometry args={[r * 0.62, 1]} />
+      </mesh>
+      {Array.from({ length: 90 }).map((_, i) => {
+        const a = hash(i) * Math.PI * 2;
+        const e = (hash(i + 7) - 0.3) * 1.4;
+        const rr = r * (0.35 + hash(i + 3) * 0.4);
+        return (
+          <mesh
+            key={i}
+            material={m[i % 3]}
+            position={[Math.cos(a) * Math.cos(e) * rr, r * 0.8 + Math.sin(e) * rr * 0.8, Math.sin(a) * Math.cos(e) * rr]}
+            rotation={[hash(i + 11) * 3, hash(i + 13) * 3, hash(i + 17) * 3]}
+          >
+            <boxGeometry args={[r * 0.45, r * 0.025, r * 0.025]} />
           </mesh>
-        )),
-      )}
+        );
+      })}
     </group>
   );
 };
@@ -543,16 +669,7 @@ const PcCase: React.FC<{ mode: CaseMode; s: number; t: number }> = ({ mode, s, t
           <pointLight position={[0, 0.06, 0.08]} intensity={0.7 * wake} distance={0.35} color="#ff5a3a" />
         </group>
       )}
-      {mode === "mites" && (
-        <group position={[MITES_AT[0], 0, MITES_AT[1]]}>
-          <DustBall s={s} />
-          {Array.from({ length: 5 }).map((_, k) => {
-            const a = (k / 5) * Math.PI * 2 + 0.3;
-            const talk = Math.pow(0.5 + 0.5 * Math.sin(s * 2.2 - k * 1.26), 4);
-            return <Mite key={k} x={Math.sin(a) * 0.15} z={Math.cos(a) * 0.15} yaw={a + Math.PI} lean={0.1 + 0.35 * talk} s={s} k={k} />;
-          })}
-        </group>
-      )}
+
       {mode === "memorial" && (
         <group position={[MEMORIAL_AT[0], 0, MEMORIAL_AT[1]]}>
           <PhotoFrame />
@@ -562,14 +679,8 @@ const PcCase: React.FC<{ mode: CaseMode; s: number; t: number }> = ({ mode, s, t
           <mesh material={m.red} position={[0.02, 0.012, 0.05]}>
             <dodecahedronGeometry args={[0.014]} />
           </mesh>
-          {[
-            [-0.24, 0.06, 0.6],
-            [-0.2, 0.2, 0.4],
-            [0.22, 0.2, -0.4],
-            [0.25, 0.06, -0.6],
-          ].map(([x, z, yaw], k) => (
-            <Mite key={k} x={x} z={z} yaw={Math.PI + yaw} lean={0.35 + 0.03 * Math.sin(s * 1.2 + k)} s={s} k={k} />
-          ))}
+          {/* one mourner */}
+          <Tick x={0.2} z={0.16} yaw={-2.5} lean={0.28} s={s * 0.3} k={1} size={0.075} />
           <pointLight position={[0, 0.3, 0.3]} intensity={0.22 + 0.02 * Math.sin(s * 2.1)} distance={0.8} decay={2} color="#ffc080" />
         </group>
       )}
@@ -578,6 +689,21 @@ const PcCase: React.FC<{ mode: CaseMode; s: number; t: number }> = ({ mode, s, t
     </group>
   );
 };
+
+// the mites in macro: rendered in their own sharp layer over a blurred copy of the board
+const MitesMacro: React.FC<{ s: number }> = ({ s }) => (
+  <group position={[MITES_AT[0], 0, MITES_AT[1]]}>
+    <Fluff s={s} r={0.045} />
+    {[0.5, 2.6, 4.4].map((a, k) => {
+      const talk = Math.pow(0.5 + 0.5 * Math.sin(s * 2.0 - k * 2.1), 3);
+      return <Tick key={k} x={Math.sin(a) * 0.1} z={Math.cos(a) * 0.1} yaw={a + Math.PI} lean={0.05 + 0.22 * talk} s={s} k={k} size={0.06} />;
+    })}
+    <ambientLight intensity={1.1} color="#8e9cd0" />
+    <directionalLight position={[0.5, 1.2, 1]} intensity={2.2} color="#ffe6c4" />
+    {/* cool rim light from behind */}
+    <directionalLight position={[-0.4, 0.5, -1.2]} intensity={2.4} color="#9ab8ff" />
+  </group>
+);
 
 // --- the radio that works, and the same radio laid out part by part ---------------------------------
 const RADIO_Z = -0.4;
@@ -847,36 +973,37 @@ const Knolling: React.FC<{ s: number }> = ({ s }) => {
 
 // --- fixed cameras only -------------------------------------------------------------------------
 const CAMS: Record<PcScene, Cam> = {
-  pelmen: { pos: [0, 1.6, 9], look: [0, 4.6, 0] },
+  dumpling: { pos: [0.1, 1.05, 1.75], look: [0, 0.05, 0.05] },
   pcCase: { pos: [0.15, 2.9, 1.25], look: [0.05, 0, -0.2] },
   radio: { pos: [0.3, 0.72, 1.75], look: [0, 0.38, RADIO_Z] },
   knolling: { pos: [0, 3.3, 0.5], look: [0, 0, -0.62] },
   paste: { pos: [CPU[0] + 0.08, 0.95, CPU[1] + 0.62], look: [CPU[0], 0.02, CPU[1] - 0.22] },
-  mites: { pos: [MITES_AT[0] + 0.02, 0.36, MITES_AT[1] + 0.5], look: [MITES_AT[0], 0.0, MITES_AT[1] + 0.1] },
+  mites: { pos: [MITES_AT[0] + 0.03, 0.13, MITES_AT[1] + 0.26], look: [MITES_AT[0], 0.02, MITES_AT[1] + 0.03] },
   memorial: { pos: [MEMORIAL_AT[0] + 0.06, 0.42, MEMORIAL_AT[1] + 0.72], look: [MEMORIAL_AT[0], 0.05, MEMORIAL_AT[1] + 0.2] },
 };
 
-const PcWorld: React.FC<{ id: PcScene }> = ({ id }) => {
+type Layer = "all" | "bg" | "fg";
+
+const PcWorld: React.FC<{ id: PcScene; layer: Layer }> = ({ id, layer }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const s = frame / FPS;
   const t = interpolate(frame, [0, durationInFrames], [0, 1], clamp);
   const cam = CAMS[id];
-  const pale = id === "pelmen";
-  const sky = pale ? "#c4c8c8" : id === "radio" || id === "knolling" ? "#5f8a88" : "#2e3852";
+  const sky = id === "dumpling" ? "#76808c" : id === "radio" || id === "knolling" ? "#5f8a88" : "#2e3852";
+  if (layer === "fg") {
+    return (
+      <>
+        <CameraRig from={cam} to={cam} t={0} />
+        <MitesMacro s={s} />
+      </>
+    );
+  }
   return (
     <>
       <color attach="background" args={[sky]} />
-      {pale && <fog attach="fog" args={[sky, 18, 60]} />}
       <CameraRig from={cam} to={cam} t={0} />
-      {pale && (
-        <>
-          <Pelmen s={s} />
-          <Rooftops />
-          <ambientLight intensity={1.6} color="#e6e4dc" />
-          <directionalLight position={[0, 6, 8]} intensity={1.4} color="#fffaf0" />
-        </>
-      )}
+      {id === "dumpling" && <Kitchen s={s} />}
       {id === "pcCase" && <PcCase mode="wide" s={s} t={t} />}
       {id === "paste" && <PcCase mode="paste" s={s} t={t} />}
       {id === "mites" && <PcCase mode="mites" s={s} t={t} />}
@@ -887,13 +1014,50 @@ const PcWorld: React.FC<{ id: PcScene }> = ({ id }) => {
   );
 };
 
-const DotaSwitch: React.FC<{ id: Scene3 }> = ({ id }) => {
+const Switch: React.FC<{ id: Scene3; layer: Layer }> = ({ id, layer }) => {
   const { durationInFrames } = useVideoConfig();
-  return isDota(id) ? <DotaWorld id={id} durationInFrames={durationInFrames} /> : <PcWorld id={id} />;
+  return isDota(id) ? <DotaWorld id={id} durationInFrames={durationInFrames} /> : <PcWorld id={id} layer={layer} />;
 };
 
-export const Ep3Scene3D: React.FC<{ id: Scene3 }> = ({ id }) => (
-  <Ps1Canvas>
-    <DotaSwitch id={id} />
-  </Ps1Canvas>
-);
+// the game gets a moody grade: lower saturation, more contrast, a dark vignette at the edges
+const DOTA_GRADE: React.CSSProperties = { position: "absolute", inset: 0, filter: "contrast(1.12) saturate(0.82) brightness(0.96)" };
+const VIGNETTE: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  background: "radial-gradient(ellipse 75% 60% at 50% 38%, rgba(0,0,0,0) 55%, rgba(6,8,14,0.55) 85%, rgba(4,5,10,0.8) 100%)",
+};
+
+export const Ep3Scene3D: React.FC<{ id: Scene3 }> = ({ id }) => {
+  if (isDota(id)) {
+    return (
+      <AbsoluteFill>
+        <div style={DOTA_GRADE}>
+          <Ps1Canvas shadows>
+            <Switch id={id} layer="all" />
+          </Ps1Canvas>
+        </div>
+        <div style={VIGNETTE} />
+      </AbsoluteFill>
+    );
+  }
+  if (id === "mites") {
+    // macro: the board behind is out of focus, the mites are sharp
+    return (
+      <AbsoluteFill>
+        <div style={{ position: "absolute", inset: 0, filter: "blur(9px) brightness(0.85)" }}>
+          <Ps1Canvas>
+            <Switch id={id} layer="bg" />
+          </Ps1Canvas>
+        </div>
+        <Ps1Canvas>
+          <Switch id={id} layer="fg" />
+        </Ps1Canvas>
+      </AbsoluteFill>
+    );
+  }
+  return (
+    <Ps1Canvas>
+      <Switch id={id} layer="all" />
+    </Ps1Canvas>
+  );
+};

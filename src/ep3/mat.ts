@@ -95,7 +95,7 @@ export const fowify = <M extends THREE.Material>(m: M): M => {
           if (c.z > 0.0) vis = max(vis, 1.0 - smoothstep(c.z * 0.7, c.z, distance(vWPos.xz, c.xy)));
         }
         float lum = dot(gl_FragColor.rgb, vec3(0.3, 0.59, 0.11));
-        vec3 fogged = mix(vec3(lum), gl_FragColor.rgb, 0.3) * 0.5 + vec3(0.03, 0.035, 0.055);
+        vec3 fogged = mix(vec3(lum), gl_FragColor.rgb, 0.35) * 0.6 + vec3(0.03, 0.035, 0.055);
         gl_FragColor.rgb = mix(fogged, gl_FragColor.rgb, vis);`,
       );
   };

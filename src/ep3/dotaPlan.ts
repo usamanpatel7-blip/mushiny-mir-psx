@@ -295,3 +295,20 @@ export const formatClock = (sec: number) => {
 };
 
 export const formatGold = (g: number) => (g >= 10000 ? `${Math.floor(g / 1000)} ${String(g % 1000).padStart(3, "0")}` : String(g));
+
+// allied vision (fog of war): green base, hero, green towers, green creeps; a ward watches the pit
+export const visionCircles = (id: DotaScene, s: number): [number, number, number][] => {
+  const circles: [number, number, number][] = [[BASE_RAD[0], BASE_RAD[1], 13]];
+  if (id !== "pit") {
+    const h = heroPose(id, s);
+    circles.push([h.x, h.z, 8.5]);
+  } else circles.push([PIT[0] + 1, PIT[1] + 1, 9]);
+  for (const t of TOWERS) if (t.side === "rad") circles.push([t.p[0], t.p[1], 7]);
+  for (const w of WAVES[id])
+    if (w.side === "rad")
+      for (let j = 0; j < CREEPS_PER_WAVE; j += 2) {
+        const c = creepPose(w, j, s);
+        circles.push([c.x, c.z, 5]);
+      }
+  return circles;
+};
