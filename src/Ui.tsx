@@ -29,6 +29,23 @@ export const windowStyle: React.CSSProperties = {
   imageRendering: "pixelated",
 };
 
+// Box-less subtitles: pixel text with a hard 1-texel black outline and a soft drop shadow.
+const O = 4;
+export const subtitleStyle: React.CSSProperties = {
+  position: "absolute",
+  left: 50,
+  right: 150,
+  bottom: 400,
+  fontFamily,
+  color: "#fdfbf2",
+  textAlign: "center",
+  textShadow: [
+    `${O}px 0 0 #000`, `-${O}px 0 0 #000`, `0 ${O}px 0 #000`, `0 -${O}px 0 #000`,
+    `${O}px ${O}px 0 #000`, `-${O}px ${O}px 0 #000`, `${O}px -${O}px 0 #000`, `-${O}px -${O}px 0 #000`,
+    "0 10px 18px rgba(0,0,0,0.6)",
+  ].join(", "),
+};
+
 // --- pixel icons (1 char = 1 texel) ---------------------------------------
 const ICONS: Record<string, { rows: string[]; palette: Record<string, string> }> = {
   brick: {
@@ -225,21 +242,17 @@ const LastAsset: React.FC<{ t: number; frame: number }> = ({ t, frame }) => {
   );
 };
 
-const DialogBox: React.FC<{ t: number; frame: number }> = ({ t, frame }) => {
+const DialogBox: React.FC<{ t: number }> = ({ t }) => {
   let idx = 0;
   for (let i = 0; i < beats.length; i++) if (t >= beatStartSec[i]) idx = i;
   const { text, speech } = beats[idx];
   const p = interpolate(t, [speech[0] - 0.05, speech[1] - 0.15], [0, 1], clamp);
   const shown = text.slice(0, Math.round(p * text.length));
-  const done = p >= 1;
   // the held breath before the Kebab-Maker line: no box, just the empty pedestal
   if (idx === 12 && shown === "") return null;
   return (
-    <div style={{ ...windowStyle, left: 40, right: 150, bottom: 400, minHeight: 250, padding: "26px 34px" }}>
-      <div style={{ fontSize: 34, lineHeight: 1.65 }}>{shown}</div>
-      {done && Math.floor(frame / 10) % 2 === 0 && (
-        <div style={{ position: "absolute", right: 30, bottom: 16, fontSize: 36, color: "#d9dcef" }}>▼</div>
-      )}
+    <div style={subtitleStyle}>
+      <div style={{ fontSize: 36, lineHeight: 1.6 }}>{shown}</div>
     </div>
   );
 };
@@ -262,7 +275,7 @@ export const Ui: React.FC = () => {
         <LastAsset t={t} frame={frame} />
       </div>
       <Inventory t={t} />
-      {t < LIGHTS_OUT_START + 1.2 && <DialogBox t={t} frame={frame} />}
+      {t < LIGHTS_OUT_START + 1.2 && <DialogBox t={t} />}
     </>
   );
 };
