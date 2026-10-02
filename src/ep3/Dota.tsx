@@ -8,6 +8,7 @@ import {
   CAMP_B,
   CAMS3,
   CREEPS_PER_WAVE,
+  ENEMIES,
   HALF,
   PATH_FOREST,
   PATH_OUT,
@@ -25,6 +26,7 @@ import {
   riverDist,
   visionCircles,
   vnoise,
+  type EnemyKind,
   type HeroPose,
   type P,
   type Side,
@@ -824,6 +826,209 @@ const LevelUpFx: React.FC<{ s: number; x: number; z: number }> = ({ s, x, z }) =
   );
 };
 
+// the enemy five: other insects, each its own silhouette, red ring and full red bar
+const EnemyBug: React.FC<{ kind: EnemyKind; x: number; z: number; s: number; phase: number; back: number }> = ({ kind, x, z, s, phase, back }) => {
+  const m = useMemo(
+    () => ({
+      ring: flatD({ color: "#ff3a2a" }),
+      disc: flatD({ color: "#ff3a2a", transparent: true, opacity: 0.16, depthWrite: false }),
+      eye: lamD({ color: "#ffe14a", emissive: "#6a5200" }),
+      beetle: lamD({ color: "#3a4a8a" }),
+      beetleD: lamD({ color: "#222a4e" }),
+      wasp: lamD({ color: "#e0a82a" }),
+      waspD: lamD({ color: "#2a2422" }),
+      mantis: lamD({ color: "#6aa04a" }),
+      mantisD: lamD({ color: "#3e6a30" }),
+      mosq: lamD({ color: "#8a8478" }),
+      mosqD: lamD({ color: "#4a4440" }),
+      roach: lamD({ color: "#7a4428" }),
+      roachD: lamD({ color: "#4a2a1a" }),
+      wing: flatD({ color: "#e4f2fa", transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false }),
+    }),
+    [],
+  );
+  const size = 1.75;
+  const zz = z - back;
+  const gy = groundY(x, zz);
+  const breathe = Math.sin(s * 2.4 + phase) * 0.025;
+  const sway = Math.sin(s * 1.6 + phase) * 0.12;
+  const legs = (mat: THREE.Material, y: number, spread: number, len: number) =>
+    [-1, 1].flatMap((side) =>
+      [0, 1, 2].map((k) => (
+        <mesh key={`${side}${k}`} material={mat} position={[side * spread, y, 0.18 - k * 0.18]} rotation={[0, 0, side * 0.55]}>
+          <cylinderGeometry args={[0.022, 0.018, len, 4]} />
+        </mesh>
+      )),
+    );
+  let body: React.ReactNode;
+  if (kind === "beetle") {
+    // a heavy horned tank
+    body = (
+      <>
+        {legs(m.beetleD, 0.2, 0.3, 0.4)}
+        <mesh material={m.beetle} position={[0, 0.48, -0.08]} scale={[1.25, 0.8, 1.35]}>
+          <dodecahedronGeometry args={[0.3]} />
+        </mesh>
+        <mesh material={m.beetleD} position={[0, 0.5, 0.3]}>
+          <dodecahedronGeometry args={[0.17]} />
+        </mesh>
+        <mesh material={m.beetleD} position={[0, 0.78, 0.42]} rotation={[-0.5, 0, 0]}>
+          <coneGeometry args={[0.07, 0.5, 4]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} material={m.eye} position={[side * 0.1, 0.56, 0.44]}>
+            <icosahedronGeometry args={[0.05, 0]} />
+          </mesh>
+        ))}
+      </>
+    );
+  } else if (kind === "wasp") {
+    // striped, hovering, stinger forward
+    const hover = 0.25 + Math.sin(s * 6 + phase) * 0.04;
+    body = (
+      <group position={[0, hover, 0]}>
+        {[0, 1, 2].map((k) => (
+          <mesh key={k} material={k % 2 ? m.waspD : m.wasp} position={[0, 0.5, -0.12 - k * 0.15]} scale={[1, 1, 0.8]}>
+            <dodecahedronGeometry args={[0.19 - k * 0.025]} />
+          </mesh>
+        ))}
+        <mesh material={m.waspD} position={[0, 0.48, -0.62]} rotation={[-Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.05, 0.25, 4]} />
+        </mesh>
+        <mesh material={m.wasp} position={[0, 0.62, 0.16]}>
+          <dodecahedronGeometry args={[0.16]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} material={m.eye} position={[side * 0.09, 0.68, 0.28]}>
+            <icosahedronGeometry args={[0.055, 0]} />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={`w${side}`} material={m.wing} position={[side * 0.3, 0.72, -0.1]} rotation={[0.2, side * 0.4, side * (0.3 + Math.sin(s * 40) * 0.25)]}>
+            <boxGeometry args={[0.5, 0.02, 0.22]} />
+          </mesh>
+        ))}
+      </group>
+    );
+  } else if (kind === "mantis") {
+    // tall, two raised scythes
+    body = (
+      <>
+        {legs(m.mantisD, 0.22, 0.22, 0.48)}
+        <mesh material={m.mantis} position={[0, 0.42, -0.2]} scale={[0.7, 0.6, 1.6]}>
+          <dodecahedronGeometry args={[0.2]} />
+        </mesh>
+        <mesh material={m.mantis} position={[0, 0.78, 0.06]} rotation={[0.35, 0, 0]}>
+          <cylinderGeometry args={[0.06, 0.08, 0.6, 5]} />
+        </mesh>
+        <mesh material={m.mantis} position={[0, 1.14, 0.18]} scale={[1.3, 0.8, 0.9]}>
+          <tetrahedronGeometry args={[0.14]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <group key={side} position={[side * 0.14, 0.92, 0.2]} rotation={[-0.9 + sway * side, 0, side * 0.25]}>
+            <mesh material={m.mantisD} position={[0, 0.16, 0]}>
+              <boxGeometry args={[0.05, 0.34, 0.05]} />
+            </mesh>
+            <mesh material={m.mantisD} position={[0, 0.34, 0.12]} rotation={[1.2, 0, 0]}>
+              <boxGeometry args={[0.04, 0.3, 0.06]} />
+            </mesh>
+          </group>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={`e${side}`} material={m.eye} position={[side * 0.11, 1.16, 0.22]}>
+            <icosahedronGeometry args={[0.045, 0]} />
+          </mesh>
+        ))}
+      </>
+    );
+  } else if (kind === "mosquito") {
+    // stilt legs, a long needle nose
+    body = (
+      <>
+        {[-1, 1].flatMap((side) =>
+          [0, 1, 2].map((k) => (
+            <mesh key={`${side}${k}`} material={m.mosqD} position={[side * 0.3, 0.42, 0.25 - k * 0.25]} rotation={[0, 0, side * 0.6]}>
+              <cylinderGeometry args={[0.012, 0.01, 0.95, 3]} />
+            </mesh>
+          )),
+        )}
+        <mesh material={m.mosq} position={[0, 0.82, -0.25]} rotation={[0.5, 0, 0]} scale={[0.6, 0.6, 1.8]}>
+          <dodecahedronGeometry args={[0.15]} />
+        </mesh>
+        <mesh material={m.mosq} position={[0, 0.86, 0.06]}>
+          <dodecahedronGeometry args={[0.13]} />
+        </mesh>
+        <mesh material={m.mosqD} position={[0, 0.8, 0.38]} rotation={[Math.PI / 2 + 0.25, 0, 0]}>
+          <cylinderGeometry args={[0.012, 0.006, 0.55, 3]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} material={m.eye} position={[side * 0.08, 0.92, 0.15]}>
+            <icosahedronGeometry args={[0.05, 0]} />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={`w${side}`} material={m.wing} position={[side * 0.25, 0.95, -0.15]} rotation={[0.3, side * 0.3, side * (0.2 + Math.sin(s * 30 + 1) * 0.2)]}>
+            <boxGeometry args={[0.46, 0.02, 0.14]} />
+          </mesh>
+        ))}
+      </>
+    );
+  } else {
+    // a flat glossy roach with whip antennae
+    body = (
+      <>
+        {legs(m.roachD, 0.12, 0.34, 0.36)}
+        <mesh material={m.roach} position={[0, 0.25, -0.1]} scale={[1.1, 0.42, 1.7]}>
+          <dodecahedronGeometry args={[0.28]} />
+        </mesh>
+        <mesh material={m.roachD} position={[0, 0.28, 0.36]} scale={[1.2, 0.5, 0.8]}>
+          <dodecahedronGeometry args={[0.15]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} material={m.roachD} position={[side * 0.18, 0.42, 0.78]} rotation={[1.2 + sway * side, 0, -side * 0.45]}>
+            <cylinderGeometry args={[0.01, 0.006, 0.8, 3]} />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={`e${side}`} material={m.eye} position={[side * 0.1, 0.34, 0.46]}>
+            <icosahedronGeometry args={[0.04, 0]} />
+          </mesh>
+        ))}
+      </>
+    );
+  }
+  return (
+    <group position={[x, gy, zz]}>
+      <mesh material={m.disc} position={[0, 0.07, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={size}>
+        <circleGeometry args={[0.7, 24]} />
+      </mesh>
+      <mesh material={m.ring} position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={size}>
+        <ringGeometry args={[0.62, 0.72, 24]} />
+      </mesh>
+      {/* facing down the lane, at him */}
+      <group scale={size} position={[0, breathe, 0]}>
+        {body}
+      </group>
+      <Bar y={2.2} w={1.1} frac={1} color={COL.hpEnemy} />
+    </group>
+  );
+};
+
+// the brain artifact bleeds a slow pink aura around the carry
+const Aura: React.FC<{ x: number; z: number; s: number; size: number }> = ({ x, z, s, size }) => {
+  const m = useMemo(() => flatD({ color: "#ff7ad8", transparent: true, opacity: 0.3, depthWrite: false }), []);
+  const pulse = 0.5 + 0.5 * Math.sin(s * 2.2);
+  m.opacity = 0.16 + 0.16 * pulse;
+  return (
+    <group position={[x, groundY(x, z), z]}>
+      <mesh material={m} position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={size * (1.25 + 0.12 * pulse)}>
+        <ringGeometry args={[0.78, 0.98, 24]} />
+      </mesh>
+      <pointLight position={[0, 1.4, 0]} intensity={2.5 + 2 * pulse} distance={5} decay={1.3} color="#ff8ad8" />
+    </group>
+  );
+};
+
 const setVision = (id: DotaScene, s: number) => {
   const circles = visionCircles(id, s);
   for (let i = 0; i < VISION_SLOTS; i++) {
@@ -924,6 +1129,23 @@ export const DotaWorld: React.FC<{ id: DotaScene; durationInFrames: number }> = 
           <group position={[CAMP_B[0] + 0.2, gA(CAMP_B[0], CAMP_B[1] - 4.6) + 0.4 + Math.sin(s * 0.8) * 0.12, CAMP_B[1] - 4.6]} scale={1.05} rotation={[0.55, 0.1, 0]}>
             <Beast ghost opacity={interpolate(t, [0.25, 0.55], [0, 1], clamp)} s={s} />
           </group>
+        </>
+      )}
+      {(id === "standoff" || id === "enemies" || id === "heroClose") && (
+        <>
+          <Aura x={hero.x} z={hero.z} s={s} size={hero.scale * 1.45} />
+          {ENEMIES.map((e, i) => (
+            <EnemyBug
+              key={e.kind}
+              kind={e.kind}
+              x={e.x}
+              z={e.z}
+              s={s}
+              phase={i * 1.7}
+              // the mosquito loses its nerve and takes a step back
+              back={e.kind === "mosquito" && id !== "standoff" ? interpolate(s, [id === "enemies" ? 1.05 : 0, id === "enemies" ? 1.45 : 0.01], [0, 0.55], clamp) : 0}
+            />
+          ))}
         </>
       )}
       {id === "pit" && (

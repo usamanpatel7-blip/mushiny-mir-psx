@@ -1,6 +1,6 @@
-// Episode 3: Сослан / Сосик. Draft timing (no voice yet): replace `seconds` with real voice timings later.
+// Episode 3: Сослан / Сосик. Timing measured on the voice track (silencedetect), like ep1.
 export type PcScene = "dumpling" | "pcCase" | "radio" | "knolling" | "paste" | "mites" | "memorial";
-export type DotaScene = "lanes" | "toForest" | "camp" | "levelUp" | "golem" | "pit" | "clock40" | "inventoryBg";
+export type DotaScene = "lanes" | "toForest" | "camp" | "levelUp" | "golem" | "pit" | "clock40" | "inventoryBg" | "standoff" | "enemies" | "heroClose";
 export type Scene3 = PcScene | DotaScene;
 
 export type Shot3 =
@@ -8,73 +8,84 @@ export type Shot3 =
   | { kind: "3d"; id: Scene3 }
   | { kind: "pick" }
   | { kind: "inventory" }
+  | { kind: "clip"; src: string; rate: number }
   | { kind: "black" };
 
 export type Beat3 = {
   text: string;
   whisper: string | null;
-  seconds: number;
+  // narration window in the voice track, absolute seconds
+  speech: [number, number];
   shots: Shot3[];
-  // fractions of the beat where the next fixed camera takes over
-  cutsAt: number[];
+  // absolute seconds where the next fixed camera takes over
+  cuts: number[];
 };
 
 export const FPS = 30;
 
-export const DOTA_SCENES: readonly DotaScene[] = ["lanes", "toForest", "camp", "levelUp", "golem", "pit", "clock40", "inventoryBg"];
+export const DOTA_SCENES: readonly DotaScene[] = ["lanes", "toForest", "camp", "levelUp", "golem", "pit", "clock40", "inventoryBg", "standoff", "enemies", "heroClose"];
 export const isDota = (id: Scene3): id is DotaScene => (DOTA_SCENES as readonly string[]).includes(id);
 
-const still = (name: string): Shot3 => ({ kind: "still", src: `ps1/${name}.png` });
 const k = (id: Scene3): Shot3 => ({ kind: "3d", id });
 
-// ~15 chars/s like the earlier narration plus a pause
-const est = (text: string, extra = 0) => Math.max(2.4, text.length / 15 + 0.7 + extra);
+// muted PS1 cut of the uploaded footage (tools/footage.py)
+const clip = (name: string, rate = 1): Shot3 => ({ kind: "clip", src: `ep3/clips/${name}.mp4`, rate });
 
-const B = (text: string, shots: Shot3[], cutsAt: number[] = [], extra = 0, whisper: string | null = null): Beat3 => ({
+// silent standoff inserted into the narration before the last line
+export const GAP = 6.7;
+// voice-track second where the narration is split for the standoff
+export const VOICE_SPLIT = 70.5;
+
+const B = (text: string, speech: [number, number], shots: Shot3[], cuts: number[] = [], whisper: string | null = null): Beat3 => ({
   text,
   whisper,
-  seconds: est(text, extra),
+  speech,
   shots,
-  cutsAt,
+  cuts,
 });
 
 export const beats3: Beat3[] = [
   B(
     "В один понедельник, который выглядел как недоваренный пельмень, муха по имени Сосик проснулась внутри старого системного блока.",
+    [0.2, 7.27],
     [k("dumpling"), k("pcCase")],
-    [0.42],
+    [3.75],
   ),
-  B("Сослан умел чинить любую технику.", [k("radio")], [], 0.3),
-  B("Проблема заключалась в том, что чаще всего она не была сломана.", [k("knolling")], [], 0.4),
-  B("Сосик жил там третью неделю, питался остатками термопасты и общался с пылевыми клещами.", [k("paste"), k("mites")], [0.45]),
-  B("В системнике ходили слухи, что Сослана давно нет в живых.", [k("memorial")], [], 0.4),
-  B("Но Сосик был занят.", [still("soslan-wide")], [], 0.4),
-  B("Он зашёл в Доту последним, когда все уже выбрали героев и забыли про него.", [{ kind: "pick" }], [], 0.6),
-  B("Сослан купил топорик, один танго и ушёл в лес, потому что линии были слишком прямыми.", [k("lanes"), k("toForest")], [0.4]),
-  B("В лесу он фармил древних крипов, которые шептали ему координаты будущих патчей.", [k("camp")]),
-  B("Через 20 минут Сос нафармил уровень boss и стал немного больше, чем был, но меньше, чем мог бы.", [k("levelUp")], [], 0.3),
+  B("Сослан умел чинить любую технику.", [7.87, 10.2], [k("radio")]),
+  B("Проблема заключалась в том, что чаще всего она не была сломана.", [10.64, 14.68], [k("knolling")]),
+  B("Сосик жил там третью неделю, питался остатками термопасты и общался с пылевыми клещами.", [15.14, 21.29], [k("paste"), k("mites")], [19.2]),
+  B("В системнике ходили слухи, что Сослана давно нет в живых.", [21.75, 25.43], [k("memorial")]),
+  B("Но Сосик был занят.", [26.12, 27.3], [clip("room")]),
+  B("Он зашёл в Доту последним, когда все уже выбрали героев и забыли про него.", [27.86, 32.71], [{ kind: "pick" }]),
+  B("Сослан купил топорик, один танго и ушёл в лес, потому что линии были слишком прямыми.", [33.37, 39.29], [k("lanes"), k("toForest")], [36.75]),
+  B("В лесу он фармил древних крипов, которые шептали ему координаты будущих патчей.", [39.7, 44.94], [clip("shoulder", 0.9), k("camp")], [41.73]),
+  B("Через 20 минут Сос нафармил уровень boss и стал немного больше, чем был, но меньше, чем мог бы.", [45.61, 51.83], [k("levelUp")]),
   B(
     "Он сидел между деревьями, убивая огромного голема и думая, почему Рошан иногда снится ему до того, как появляется на карте.",
+    [52.55, 60.98],
     [k("golem"), k("pit")],
-    [0.58],
+    [56.64],
   ),
-  B("На 40-й минуте Сос вышел из леса.", [k("clock40")], [], 0.6),
-  B("У него был странный артефакт, 20 тысяч золота и секрет, который не знал никто.", [{ kind: "inventory" }], [], 0.4),
-  B("Сослан нажал атаку.", [still("soslan-hand"), still("soslan-eye"), { kind: "black" }], [0.3, 0.6], 1.6),
+  B("На 40-й минуте Сос вышел из леса.", [61.6, 64.12], [clip("side", 0.9), k("clock40")], [62.5]),
+  B("У него был странный артефакт, 20 тысяч золота и секрет, который не знал никто.", [64.69, 70.24], [{ kind: "inventory" }]),
+  // no words: the farmed carry walks out on all five of them
+  B("", [70.58, 70.58], [k("standoff"), k("enemies"), k("heroClose")], [73.3, 75.2]),
+  B("Сослан нажал атаку.", [70.78 + GAP, 72.13 + GAP], [clip("keys"), clip("eye"), { kind: "black" }], [71.45 + GAP, 72.25 + GAP]),
 ];
 
-export const beatStartSec3 = beats3.map((_, i) => beats3.slice(0, i).reduce((a, b) => a + b.seconds, 0));
-export const END3 = beatStartSec3[beats3.length - 1] + beats3[beats3.length - 1].seconds;
+export const beatStartSec3 = beats3.map((b, i) => (i === 0 ? 0 : b.speech[0] - 0.2));
+// a long black after the click: the music is left alone with it
+export const END3 = 72.25 + GAP + 4.5;
 export const beatStarts3 = beatStartSec3.map((s) => Math.round(s * FPS));
 export const totalFrames3 = Math.round(END3 * FPS);
 export const beatFrames3 = beatStarts3.map((s, i) => (i + 1 < beatStarts3.length ? beatStarts3[i + 1] : totalFrames3) - s);
 
 // narration window inside each beat, for the typewriter
-export const speech3 = beats3.map((b, i): [number, number] => [beatStartSec3[i] + 0.25, beatStartSec3[i] + b.seconds - 0.5 - (b.whisper ? 1.3 : 0)]);
+export const speech3 = beats3.map((b) => b.speech);
 
 // the last line ends on a hard cut to black: the click
 export const LAST = beats3.length - 1;
-export const clickFrame = beatStarts3[LAST] + Math.round(beats3[LAST].cutsAt[1] * beatFrames3[LAST]);
+export const clickFrame = Math.round(beats3[LAST].cuts[1] * FPS);
 
 export const beatIndexAt3 = (t: number) => {
   let idx = 0;

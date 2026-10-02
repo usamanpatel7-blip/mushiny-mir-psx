@@ -13,6 +13,7 @@ export const Ui3: React.FC = () => {
   // the final click is a hard cut to black: the subtitle goes with it
   if (idx === LAST && frame >= clickFrame) return null;
   const { text, whisper } = beats3[idx];
+  if (!text) return null;
   const [s0, s1] = speech3[idx];
   const p = interpolate(t, [s0, s1], [0, 1], clamp);
   const shown = text.slice(0, Math.round(p * text.length));

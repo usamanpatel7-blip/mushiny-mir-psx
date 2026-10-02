@@ -192,6 +192,12 @@ export const heroPose = (id: DotaScene, s: number): HeroPose => {
     const p = along(PATH_OUT, k * len);
     return { x: p.x, z: p.z, yaw: k < 1 ? 0 : yawOf(1, 0.2), walk: k > 0 && k < 1 ? 1 : 0, attack: false, scale: 1.32 };
   }
+  if (id === "standoff") {
+    // up the top lane, then he stops
+    const k = ease((s - 0.15) / 2.1);
+    return { x: -19, z: 6.2 - 4 * k, yaw: Math.PI, walk: k > 0 && k < 1 ? 1 : 0, attack: false, scale: 1.55 };
+  }
+  if (id === "enemies" || id === "heroClose") return { x: -19, z: 2.2, yaw: Math.PI, walk: 0, attack: false, scale: 1.55 };
   // inventoryBg: standing on the lane
   return { x: PATH_OUT[1][0], z: PATH_OUT[1][1], yaw: yawOf(1, 0.2), walk: 0, attack: false, scale: 1.32 };
 };
@@ -221,7 +227,20 @@ export const WAVES: Record<DotaScene, Wave[]> = {
     { lane: "bot", side: "rad", d0: 20.2, stop: 20.2 },
     { lane: "bot", side: "dire", d0: 44.2, stop: 44.2 },
   ],
+  standoff: [],
+  enemies: [],
+  heroClose: [],
 };
+
+// the five of them, blocking the top lane in a wedge
+export type EnemyKind = "beetle" | "wasp" | "mantis" | "mosquito" | "roach";
+export const ENEMIES: { kind: EnemyKind; x: number; z: number }[] = [
+  { kind: "beetle", x: -19, z: -2.2 },
+  { kind: "wasp", x: -20.25, z: -2.9 },
+  { kind: "mantis", x: -17.75, z: -2.9 },
+  { kind: "roach", x: -20.8, z: -3.8 },
+  { kind: "mosquito", x: -17.2, z: -3.8 },
+];
 
 export const CREEPS_PER_WAVE = 4;
 export const creepPose = (w: Wave, j: number, s: number) => {
@@ -244,6 +263,9 @@ export const CAMS3: Record<DotaScene, { target: P; dist: number }> = {
   pit: { target: [-8, -13.6], dist: 15 },
   clock40: { target: [4.2, 16.6], dist: 14 },
   inventoryBg: { target: [4.2, 16.6], dist: 14 },
+  standoff: { target: [-19, -1.1], dist: 14 },
+  enemies: { target: [-19, -3.2], dist: 8 },
+  heroClose: { target: [-19, -1.85], dist: 9 },
 };
 
 // HUD state
@@ -303,6 +325,8 @@ export const visionCircles = (id: DotaScene, s: number): [number, number, number
     const h = heroPose(id, s);
     circles.push([h.x, h.z, 8.5]);
   } else circles.push([PIT[0] + 1, PIT[1] + 1, 9]);
+  // the enemies are standing right in front of him, in plain sight
+  if (id === "standoff" || id === "enemies" || id === "heroClose") circles.push([-19, -3.2, 4]);
   for (const t of TOWERS) if (t.side === "rad") circles.push([t.p[0], t.p[1], 7]);
   for (const w of WAVES[id])
     if (w.side === "rad")
