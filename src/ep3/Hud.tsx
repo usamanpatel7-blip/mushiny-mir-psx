@@ -441,8 +441,8 @@ export const DotaHud: React.FC<{ id: DotaScene; dim?: boolean }> = ({ id, dim = 
   const s = frame / FPS;
   const st = hudState(id, s);
   const hit40 = id === "clock40" && st.clock >= 40 * 60;
-  const hit20 = id === "levelUp" && st.clock >= 20 * 60;
-  const pop = hit40 ? interpolate(st.clock - 40 * 60, [0, 0.15, 0.6], [1, 1.35, 1.15], clamp) : hit20 ? interpolate(st.clock - 20 * 60, [0, 0.15, 0.6], [1, 1.3, 1.1], clamp) : 1;
+  const hit20 = id === "levelUp" && st.clock >= 10 * 60;
+  const pop = hit40 ? interpolate(st.clock - 40 * 60, [0, 0.15, 0.6], [1, 1.35, 1.15], clamp) : hit20 ? interpolate(st.clock - 10 * 60, [0, 0.15, 0.6], [1, 1.3, 1.1], clamp) : 1;
   const lvlPop = id === "levelUp" ? interpolate(s, [0.9, 1.05, 1.5], [1, 1.7, 1.15], clamp) : 1;
   const boss = st.level === "BOSS";
   const attacking = id === "camp" || id === "golem";

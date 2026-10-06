@@ -21,12 +21,19 @@ const MUSIC = [
   { src: "audio/dusty2.mp3", from: 44.62, to: END, startFrom: 0.82, quietUntil: END },
 ] as const;
 
-const BODY = 0.2; // ~-14 dB under the voice
-const INTRO = 0.34; // sparse intro is ~7 dB quieter in the source
+const BODY = 0.18;
+const INTRO = 0.3; // sparse intro is ~7 dB quieter in the source
+
+// the music steps back under every line and breathes again in the pauses
+const duck = (t: number) => {
+  const talking = Math.max(...beats.map((b) => interpolate(t, [b.speech[0] - 0.25, b.speech[0], b.speech[1], b.speech[1] + 0.35], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })));
+  return 1 - 0.45 * talking;
+};
 
 const Soundtrack: React.FC = () => (
   <>
-    <Audio src={staticFile("audio/voice.mp3")} volume={1} />
+    {/* loudness-normalized narration (-15 LUFS) */}
+    <Audio src={staticFile("audio/voice-kriptan.wav")} volume={1} />
     {/* self-synthesized: rising sub drone, cut dead by the sting */}
     <Sequence from={sec(HORROR.droneFrom)} durationInFrames={sec(HORROR.flash[0]) - sec(HORROR.droneFrom)} layout="none">
       <Audio src={staticFile("audio/drone.wav")} volume={0.9} />
@@ -43,7 +50,7 @@ const Soundtrack: React.FC = () => (
             startFrom={sec(m.startFrom)}
             volume={(f) => {
               const t = m.from + f / FPS;
-              const base = (m.quietUntil !== null && t < m.quietUntil ? INTRO : BODY) *
+              const base = (m.quietUntil !== null && t < m.quietUntil ? INTRO : BODY) * duck(t) *
                 (m.to === FADE_END
                   ? interpolate(t, [FADE_START, FADE_END], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
                   : // darkness: the music keeps going, quieter, then drifts away

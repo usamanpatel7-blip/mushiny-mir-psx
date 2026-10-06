@@ -287,7 +287,7 @@ export const hudState = (id: DotaScene, s: number): HudState => {
       return { clock: 7 * 60 + 12 + s, gold: 1870 + Math.floor(s * 1.3), level: "7", items: ["hatchet", null, null, null, null, null], backpack: none, score: [3, 7] };
     case "levelUp":
       return {
-        clock: 19 * 60 + 59.1 + s,
+        clock: 9 * 60 + 59.1 + s,
         gold: 9215 + Math.floor(s * 1.3),
         level: s >= 0.9 ? "BOSS" : "17",
         items: ["hatchet", "butterfly", null, null, null, null],
