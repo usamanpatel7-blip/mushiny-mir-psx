@@ -30,7 +30,7 @@ const CAMS: Record<VozScene, Move> = {
   keeperCeil: { from: { pos: [0, 0.12, 0.15], look: [0, 1.8, -0.8] }, to: { pos: [0, 0.12, 0.1], look: [0, 2.2, -0.7] }, dur: 2.3 },
   keeperBack: { from: { pos: [0.4, 1.5, 4.0], look: [-2.5, 2.6, -8] } },
   beaconBlink: { from: { pos: [0.4, 1.7, 2.2], look: [-3.2, 5.4, -10] } },
-  grinSpread: { from: { pos: [0, 3.4, 0.001], look: [0, 0, 0] } },
+  grinSpread: { from: { pos: [0, 2.5, 0.001], look: [0, 0, 0] } },
   // the echo of keeperCeil: the same look up from the sand, but nobody is standing over us
   ceilingUs: { from: { pos: [0, 0.12, 0.1], look: [0, 2.2, -0.6] } },
 };
@@ -478,11 +478,10 @@ const VozMask: React.FC<{ mats: Mats; cm: CastMats; pos: [number, number, number
   lift = 0,
   rot,
 }) => {
-  const eyeGeo = useEyeGeo();
   return (
     <Mask mats={mats} pos={pos} scale={scale} rot={rot}>
       <MaskGrin cm={cm} />
-      {eyes && EYES.map(([x, y], i) => <mesh key={i} geometry={eyeGeo} material={cm.eye} position={[x, y, surfaceZ(x, y) - 0.02]} scale={[0.17, 0.13, 0.12]} />)}
+      {eyes && <FlyEyes cm={cm} />}
       {[-1, 1].map((side) => (
         <group key={side} position={[side * 0.16, 0.8, 0.15]} rotation={[0.1 + lift, 0, -side * 0.35]}>
           <mesh material={cm.antenna} position={[0, 0.3, 0]}>
@@ -499,6 +498,18 @@ const VozMask: React.FC<{ mats: Mats; cm: CastMats; pos: [number, number, number
   );
 };
 
+// his compound eyes, sitting in the eye holes of any mask
+const FlyEyes: React.FC<{ cm: CastMats }> = ({ cm }) => {
+  const eyeGeo = useEyeGeo();
+  return (
+    <>
+      {EYES.map(([x, y], i) => (
+        <mesh key={i} geometry={eyeGeo} material={cm.eye} position={[x, y, surfaceZ(x, y) - 0.02]} scale={[0.17, 0.13, 0.12]} />
+      ))}
+    </>
+  );
+};
+
 // a backrooms ceiling where the sky should be: tiles and fluorescent panels, fading in and out
 const CeilingSky: React.FC<{ k: number; lit?: number }> = ({ k, lit = 1 }) => {
   const mat = useMemo(() => new THREE.MeshBasicMaterial({ map: rep(tiles(), 10, 10), transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide }), []);
@@ -511,8 +522,8 @@ const CeilingSky: React.FC<{ k: number; lit?: number }> = ({ k, lit = 1 }) => {
   );
 };
 
-// a few ordinary empty faces around a point; with `grin` they have caught his smile
-const Around: React.FC<{ mats: Mats; n: number; r: number; at?: [number, number]; grin?: CastMats }> = ({ mats, n, r, at = [0, 0], grin }) => (
+// a few ordinary empty faces around a point; with `eyes` they have caught his eyes
+const Around: React.FC<{ mats: Mats; n: number; r: number; at?: [number, number]; eyes?: CastMats }> = ({ mats, n, r, at = [0, 0], eyes }) => (
   <>
     {Array.from({ length: n }).map((_, i) => {
       const a = (i / n) * Math.PI * 2 + 0.4;
@@ -524,7 +535,7 @@ const Around: React.FC<{ mats: Mats; n: number; r: number; at?: [number, number]
           rot={[-Math.PI / 2, 0, (hash(i + 4) - 0.5) * 1.2]}
           scale={0.26}
         >
-          {grin && <MaskGrin cm={grin} />}
+          {eyes && <FlyEyes cm={eyes} />}
         </Mask>
       );
     })}
@@ -878,12 +889,12 @@ const Scene: React.FC<{ id: VozScene; s: number; mats: Mats; cm: CastMats; t: Th
       );
 
     case "grinSpread":
-      // his face among the empty ones; one cut later, every face around has his smile
+      // his face among the empty ones; one cut later, every face around looks out with his eyes
       return (
         <>
           <Sand look={DAWN} size={8} rep={14} />
-          <Around mats={mats} n={7} r={0.95} grin={s >= 1.4 ? cm : undefined} />
-          <Around mats={mats} n={11} r={1.75} grin={s >= 1.4 ? cm : undefined} />
+          <Around mats={mats} n={7} r={0.95} eyes={s >= 1.4 ? cm : undefined} />
+          <Around mats={mats} n={11} r={1.75} eyes={s >= 1.4 ? cm : undefined} />
           <VozMask mats={mats} cm={cm} pos={[0, 0.03, 0.02]} scale={0.42} eyes lift={0.25} />
         </>
       );
