@@ -668,6 +668,9 @@ const VozWorld: React.FC<{ id: VozScene }> = ({ id }) => {
   // PS1 animation steps at 15 fps
   const s = Math.floor(frame / 2) * (2 / fps);
   const mats = useMats(DAWN);
+  // the crates stand against the sun: a little self-light keeps them from going black (this canvas only)
+  (mats.wood as THREE.MeshLambertMaterial).emissive.set("#3a3a24");
+  (mats.woodDark as THREE.MeshLambertMaterial).emissive.set("#26261a");
   const cm = useCastMats();
   const t = useThings();
   const ready = useFontReady();
