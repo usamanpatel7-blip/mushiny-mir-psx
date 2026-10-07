@@ -1,33 +1,27 @@
-// Episode 5: «Воздухан». A fly-headed coach of the «Свежий Поток» system takes walls away for a living,
-// until the sea of ep4 brings back his face. It washes up like every other empty face (every three months is a patch),
-// and the keeper who finds it has to decide whether a talking face goes to the senior of the shift (the lighthouse).
+// Episode 5: «Воздухан». Nothing he did is shown. The narration tells his biography in a bright voice, while the
+// picture stays on the ep4 shore at dawn, where the sea brings back what his air took away: a window frame, an armchair,
+// a piece of wall, a bus seat, an exit sign, a ceiling tile, a slipper. Every event is only heard, far off screen.
+// One fixed master shot of the beach comes back like a clock, fuller each time; then, among the empty faces, his.
 export type VozScene =
-  | "officeWide"
-  | "faceClose"
-  | "wallPat"
-  | "flipchart"
-  | "seminar"
-  | "windowOut"
-  | "comfortZone"
-  | "valve"
-  | "module3"
-  | "noWall"
-  | "busInside"
-  | "busOut"
-  | "stamp"
-  | "shrug"
-  | "ceilingOff"
-  | "neighbors"
-  | "neighborsUp"
-  | "tide"
+  | "black"
+  | "shoreMain"
+  | "wallChunk"
+  | "flipPage"
+  | "frameSurf"
+  | "armchair"
+  | "doorway"
+  | "busSeat"
+  | "exitSign"
+  | "shoreKeeper"
+  | "ceilingTile"
+  | "slipper"
+  | "shoreMasks"
   | "faceTop"
   | "faceOpen"
-  | "keeperLow"
-  | "faceTalk"
+  | "faceStill"
   | "keeperCeil"
-  | "keeperTurn"
-  | "lighthouseWalls"
-  | "crateEnd";
+  | "keeperBack"
+  | "lighthouseWall";
 
 export type Shot5 = { kind: "still"; src: string } | { kind: "3d"; id: VozScene };
 
@@ -43,11 +37,10 @@ export const FPS = 30;
 export const VOICE = "ep5/voice.wav";
 export const VOICE_LENGTH = 52.7;
 // video second where voice second 0 plays
-export const LEAD = 0.6;
+export const LEAD = 1.4;
 // after the last word: the ending, then a slow fade
-export const TAIL = 7.8;
+export const TAIL = 7.0;
 
-const still = (name: string): Shot5 => ({ kind: "still", src: `ps1/${name}.png` });
 const k = (id: VozScene): Shot5 => ({ kind: "3d", id });
 const P = (text: string, from: number, to: number): Part => ({ text, from, to });
 
@@ -76,62 +69,47 @@ export const LINES: Line[] = [
 ];
 
 export const CUTS: Cut[] = [
-  { line: 0, at: -LEAD, shot: k("officeWide") },
-  { line: 0, at: 3.0, shot: k("faceClose") },
-  { line: 1, at: 4.35, shot: k("wallPat") },
-  // his own office, as the reference shows it: the system sells
-  { line: 2, at: 5.85, shot: still("voz-office") },
-  { line: 2, at: 7.55, shot: k("flipchart") },
-  { line: 3, at: 9.15, shot: k("seminar") },
-  { line: 4, at: 12.65, shot: k("windowOut") },
-  { line: 5, at: 14.58, shot: k("comfortZone") },
-  // outside the comfort zone there is only the yellow office that never ends, and he is already there
-  { line: 5, at: 16.2, shot: still("voz-backrooms") },
-  { line: 6, at: 17.08, shot: k("valve") },
-  { line: 6, at: 18.45, shot: k("module3") },
-  { line: 7, at: 20.07, shot: k("noWall") },
-  { line: 8, at: 22.5, shot: k("busInside") },
-  { line: 9, at: 25.6, shot: k("busOut") },
-  { line: 10, at: 29.1, shot: k("stamp") },
-  { line: 11, at: 31.98, shot: k("shrug") },
-  { line: 12, at: 34.4, shot: k("ceilingOff") },
-  { line: 13, at: 36.25, shot: k("neighbors") },
-  { line: 14, at: 37.85, shot: k("neighborsUp") },
-  { line: 15, at: 39.45, shot: k("tide") },
+  // the voice starts in the dark, over the hiss of a valve; the shore fades up under it
+  { line: 0, at: -LEAD, shot: k("black") },
+  { line: 0, at: 1.9, shot: k("shoreMain") },
+  { line: 1, at: 4.35, shot: k("wallChunk") },
+  { line: 2, at: 5.85, shot: k("flipPage") },
+  { line: 3, at: 9.15, shot: k("frameSurf") },
+  { line: 5, at: 14.58, shot: k("armchair") },
+  { line: 7, at: 20.07, shot: k("doorway") },
+  { line: 8, at: 22.5, shot: k("busSeat") },
+  { line: 9, at: 25.6, shot: k("exitSign") },
+  // the master shot again: everything is on the sand now, and the keeper is collecting it
+  { line: 10, at: 29.1, shot: k("shoreKeeper") },
+  { line: 12, at: 34.4, shot: k("ceilingTile") },
+  { line: 14, at: 37.85, shot: k("slipper") },
+  // three months later, the master shot once more: the patch has come in
+  { line: 15, at: 39.45, shot: k("shoreMasks") },
   { line: 15, at: 41.9, shot: k("faceTop") },
   { line: 16, at: 43.17, shot: k("faceOpen") },
-  { line: 17, at: 44.72, shot: k("keeperLow") },
-  { line: 17, at: 46.32, shot: k("faceTalk") },
-  // «у тебя в голове»: for a moment the sky above the keeper is a ceiling with fluorescent panels
+  { line: 17, at: 44.72, shot: k("faceStill") },
   { line: 17, at: 47.3, shot: k("keeperCeil") },
-  { line: 18, at: 48.4, shot: k("keeperTurn") },
-  { line: 19, at: 50.82, shot: k("lighthouseWalls") },
-  // the open ending: the face goes into a crate like all the others, and the crate loses a wall
-  { line: 19, at: 53.0, shot: k("crateEnd") },
+  { line: 18, at: 48.4, shot: k("keeperBack") },
+  { line: 19, at: 50.82, shot: k("lighthouseWall") },
 ];
 
+// every one of his deeds is a sound from somewhere else
 export const SFX: Sfx[] = [
-  // the window frame pops on the hiss and lands in the pause
-  { line: 4, at: 13.75, src: "ep5/hiss.wav", volume: 0.35 },
-  { line: 4, at: 14.5, src: "ep5/thud.wav", volume: 0.5 },
-  { line: 6, at: 17.3, src: "ep5/hiss.wav", volume: 0.45 },
-  { line: 7, at: 20.07, src: "ep5/wind.wav", volume: 0.3 },
-  { line: 9, at: 27.15, src: "ep5/hiss.wav", volume: 0.4 },
-  { line: 9, at: 28.3, src: "ep5/thud.wav", volume: 0.45 },
-  { line: 10, at: 30.35, src: "ep5/stamp.wav", volume: 0.7 },
-  { line: 12, at: 34.55, src: "ep5/hiss.wav", volume: 0.3 },
-  { line: 14, at: 37.9, src: "ep5/wind.wav", volume: 0.4 },
-  // the lid goes on plank by plank; the crate breathes out and loses a wall
-  ...[53.95, 54.4, 54.85, 55.3].map((at) => ({ line: 19, at, src: "ep5/stamp.wav", volume: 0.18 })),
-  { line: 19, at: 56.5, src: "ep5/hiss.wav", volume: 0.25 },
-  { line: 19, at: 57.5, src: "ep5/thud.wav", volume: 0.35 },
+  { line: 0, at: -LEAD, src: "ep5/hiss.wav", volume: 0.3 },
+  { line: 3, at: 10.6, src: "ep5/creak.wav", volume: 0.35 },
+  { line: 4, at: 14.55, src: "ep5/pop.wav", volume: 0.5 },
+  { line: 5, at: 16.0, src: "ep5/creak.wav", volume: 0.25 },
+  { line: 7, at: 20.3, src: "ep5/wind.wav", volume: 0.35 },
+  { line: 9, at: 28.95, src: "ep5/brakes.wav", volume: 0.4 },
+  { line: 12, at: 34.4, src: "ep5/buzz.wav", volume: 0.22 },
+  { line: 14, at: 38.4, src: "ep5/wind.wav", volume: 0.45 },
+  { line: 19, at: 52.9, src: "ep5/hiss.wav", volume: 0.22 },
 ];
 
-// office music until the neighbours are gone, then the shore theme of ep4 comes back with the sea
-export const MUSIC = [
-  { src: "audio/dusty1.mp3", level: 0.17, from: { line: 0, at: -LEAD }, to: { line: 14, at: 40.4 } },
-  { src: "ep4/music-1.mp3", level: 0.2, from: { line: 14, at: 39.6 }, to: null },
-] as const;
+// the shore under everything from the first image on; the ep4 shore theme low beneath the voice
+export const SURF = { src: "ep5/surf.wav", level: 0.5, from: { line: 0, at: 1.9 } };
+type Anchor = { line: number; at: number };
+export const MUSIC: { src: string; level: number; from: Anchor; to: Anchor | null }[] = [{ src: "ep4/music-1.mp3", level: 0.13, from: { line: 0, at: 1.2 }, to: null }];
 
 // voice second -> video second for a given line
 export const offsets = () => LINES.map((_, i) => LEAD + LINES.slice(0, i).reduce((a, l) => a + l.gap, 0));

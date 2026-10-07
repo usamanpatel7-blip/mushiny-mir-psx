@@ -2,12 +2,12 @@ import React from "react";
 import { AbsoluteFill, Audio, Composition, Img, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { subtitleStyle } from "../Ui";
 import { VozScene3D } from "./World";
-import { CUTS, END, FPS, LINES, MUSIC, SFX, VOICE, offsets, toVideo, voiceSegments, type Shot5 } from "./script";
+import { CUTS, END, FPS, LINES, MUSIC, SFX, SURF, VOICE, offsets, toVideo, voiceSegments, type Shot5 } from "./script";
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
 const ShotView: React.FC<{ shot: Shot5 }> = ({ shot }) =>
-  shot.kind === "3d" ? (
+  shot.kind === "3d" && shot.id === "black" ? null : shot.kind === "3d" ? (
     <VozScene3D id={shot.id} />
   ) : (
     <Img src={staticFile(shot.src)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", imageRendering: "pixelated" }} />
@@ -45,6 +45,7 @@ export const VozReel: React.FC = () => {
   const cuts = CUTS.map((c) => ({ at: toVideo(c.line, c.at), shot: c.shot }));
   const off = offsets();
   const speech = LINES.flatMap((l, i) => l.parts.map((p) => [p.from + off[i], p.to + off[i]] as const));
+  const surfAt = toVideo(SURF.from.line, SURF.from.at);
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {cuts.map((c, i) => {
@@ -56,6 +57,8 @@ export const VozReel: React.FC = () => {
           </Sequence>
         );
       })}
+      {/* the first image comes up slowly out of the dark */}
+      <AbsoluteFill style={{ backgroundColor: "#000", opacity: interpolate(frame / FPS, [surfAt, surfAt + 1.6], [1, 0], clamp) }} />
       <Subtitles />
       {/* the open ending dims slowly, together with the music */}
       <AbsoluteFill style={{ backgroundColor: "#000", opacity: interpolate(frame / FPS, [END - 2.2, END - 0.2], [0, 1], clamp) }} />
@@ -69,6 +72,14 @@ export const VozReel: React.FC = () => {
           <Audio src={staticFile(fx.src)} volume={() => fx.volume} />
         </Sequence>
       ))}
+      {/* the surf never stops once the shore is on screen */}
+      <Sequence from={Math.round(surfAt * FPS)} layout="none">
+        <Audio
+          src={staticFile(SURF.src)}
+          loop
+          volume={(f) => SURF.level * interpolate(f / FPS, [0, 1.6, END - surfAt - 2.2, END - surfAt], [0, 1, 1, 0], clamp)}
+        />
+      </Sequence>
       {MUSIC.map((m, i) => {
         const a = toVideo(m.from.line, m.from.at);
         const b = m.to ? toVideo(m.to.line, m.to.at) : END;

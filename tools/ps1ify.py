@@ -46,8 +46,6 @@ CAMS = {
     "faces-suit-wide": ("src-faces-suit.jpg", 0.42, 0.5, 1.0),
     "faces-suit-face": ("src-faces-suit.jpg", 0.6, 0.56, 2.2),
     "faces-suit-light": ("src-faces-suit.jpg", 0.22, 0.2, 2.6),
-    "voz-office": ("src-voz-office.jpg", 0.5, 0.5, 1.0),
-    "voz-backrooms": ("src-voz-backrooms.jpg", 0.5, 0.5, 1.0),
 }
 
 
