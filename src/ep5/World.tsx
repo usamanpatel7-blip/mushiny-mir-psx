@@ -307,18 +307,18 @@ const CeilingTile: React.FC<{ t: Things; on: boolean }> = ({ t, on }) => (
 );
 
 // --- the keeper -------------------------------------------------------------------------------------------------------
-// the keeper of the shift, dressed: a long oilskin coat with a collar, boots, a peaked cap; under it a fly's head
+// the keeper of the shift: a worker in a light blue coverall, rubber boots, a fly's head
 const useKeeperMats = () =>
   useMemo(
     () => ({
-      coat: lam({ color: "#3e4a3a" }),
-      coatDark: lam({ color: "#2c3628" }),
-      boot: lam({ color: "#1c1a18" }),
-      cap: lam({ color: "#22283a" }),
-      badge: lam({ color: "#c8a040", emissive: "#2a1c00" }),
-      head: lam({ color: "#3c3634" }),
-      eye: lam({ color: "#c43a24", emissive: "#3a0a04" }),
-      button: lam({ color: "#b89040" }),
+      // a little self-light so he never turns into a black cut-out against the dawn
+      suit: lam({ color: "#8ab4d8", emissive: "#1c2c3c" }),
+      seam: lam({ color: "#6a92b8", emissive: "#121e2a" }),
+      boot: lam({ color: "#3a3c3a" }),
+      belt: lam({ color: "#4a4a52" }),
+      head: lam({ color: "#7a6a5a", emissive: "#1a140e" }),
+      eye: lam({ color: "#c43a24", emissive: "#4a0e06" }),
+      feeler: lam({ color: "#3a322c" }),
     }),
     [],
   );
@@ -326,55 +326,61 @@ const DressedKeeper: React.FC<{ pos: [number, number, number]; yaw: number; scal
   const m = useKeeperMats();
   return (
     <group position={pos} rotation={[0, yaw, 0]} scale={scale}>
-      {[-0.09, 0.09].map((x) => (
-        <mesh key={x} material={m.boot} position={[x, 0.1, 0.02]}>
-          <boxGeometry args={[0.11, 0.2, 0.2]} />
-        </mesh>
+      {/* boots and coverall legs */}
+      {[-0.1, 0.1].map((x) => (
+        <group key={x}>
+          <mesh material={m.boot} position={[x, 0.12, 0.02]}>
+            <boxGeometry args={[0.13, 0.24, 0.22]} />
+          </mesh>
+          <mesh material={m.suit} position={[x, 0.55, 0]}>
+            <boxGeometry args={[0.15, 0.66, 0.17]} />
+          </mesh>
+        </group>
       ))}
-      <mesh material={m.coat} position={[0, 0.78, 0]}>
-        <cylinderGeometry args={[0.19, 0.3, 1.16, 7]} />
+      {/* body of the coverall: belt, zip, a chest pocket */}
+      <mesh material={m.suit} position={[0, 1.1, 0]}>
+        <boxGeometry args={[0.42, 0.52, 0.24]} />
       </mesh>
-      {/* the front seam and its buttons */}
-      <mesh material={m.coatDark} position={[0, 0.78, 0.235]} rotation={[-0.09, 0, 0]}>
-        <boxGeometry args={[0.02, 1.1, 0.01]} />
+      <mesh material={m.belt} position={[0, 0.88, 0]}>
+        <boxGeometry args={[0.43, 0.05, 0.25]} />
       </mesh>
-      {[1.2, 1.0, 0.8, 0.6].map((y) => (
-        <mesh key={y} material={m.button} position={[0.04, y, 0.26 - (1.36 - y) * 0.09]}>
-          <boxGeometry args={[0.025, 0.025, 0.01]} />
-        </mesh>
-      ))}
-      <mesh material={m.coat} position={[0, 1.34, 0]} scale={[1, 0.4, 0.75]}>
-        <boxGeometry args={[0.5, 0.2, 0.36]} />
+      <mesh material={m.seam} position={[0, 1.1, 0.121]}>
+        <boxGeometry args={[0.018, 0.5, 0.005]} />
       </mesh>
-      {/* sleeves hang straight, hands hidden in them */}
+      <mesh material={m.seam} position={[-0.11, 1.2, 0.122]}>
+        <boxGeometry args={[0.1, 0.09, 0.005]} />
+      </mesh>
+      <mesh material={m.suit} position={[0, 1.37, 0]}>
+        <boxGeometry args={[0.5, 0.08, 0.26]} />
+      </mesh>
+      {/* sleeves hang down, the hands are lost in the cuffs */}
       {[-0.27, 0.27].map((x) => (
-        <mesh key={`s${x}`} material={m.coatDark} position={[x, 1.02, 0.02]} rotation={[0, 0, x > 0 ? 0.08 : -0.08]}>
-          <boxGeometry args={[0.11, 0.62, 0.13]} />
-        </mesh>
+        <group key={`a${x}`}>
+          <mesh material={m.suit} position={[x, 1.08, 0.01]} rotation={[0, 0, x > 0 ? 0.07 : -0.07]}>
+            <boxGeometry args={[0.11, 0.56, 0.12]} />
+          </mesh>
+          <mesh material={m.head} position={[x * 1.07, 0.77, 0.01]}>
+            <boxGeometry args={[0.07, 0.07, 0.07]} />
+          </mesh>
+        </group>
       ))}
-      {/* a turned-up collar */}
-      <mesh material={m.coatDark} position={[0, 1.44, 0]}>
-        <cylinderGeometry args={[0.13, 0.17, 0.14, 7, 1, true]} />
+      <mesh material={m.seam} position={[0, 1.43, 0]}>
+        <cylinderGeometry args={[0.1, 0.13, 0.06, 7]} />
       </mesh>
-      <group position={[0, 1.58, 0.02]} rotation={[look, turn, 0]}>
+      <group position={[0, 1.57, 0.02]} rotation={[look, turn, 0]}>
         <mesh material={m.head} scale={[1, 1, 1.1]}>
           <dodecahedronGeometry args={[0.13]} />
         </mesh>
         {[-1, 1].map((side) => (
-          <mesh key={side} material={m.eye} position={[side * 0.085, 0.01, 0.08]} scale={[1, 1.15, 0.9]}>
-            <icosahedronGeometry args={[0.075, 0]} />
+          <mesh key={side} material={m.eye} position={[side * 0.09, 0.02, 0.07]} scale={[1, 1.15, 0.9]}>
+            <icosahedronGeometry args={[0.08, 0]} />
           </mesh>
         ))}
-        {/* the peaked cap with a little badge */}
-        <mesh material={m.cap} position={[0, 0.12, 0]}>
-          <cylinderGeometry args={[0.15, 0.13, 0.07, 8]} />
-        </mesh>
-        <mesh material={m.cap} position={[0, 0.09, 0.13]} rotation={[0.3, 0, 0]}>
-          <boxGeometry args={[0.2, 0.015, 0.09]} />
-        </mesh>
-        <mesh material={m.badge} position={[0, 0.125, 0.15]}>
-          <boxGeometry args={[0.04, 0.03, 0.01]} />
-        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={`f${side}`} material={m.feeler} position={[side * 0.04, 0.17, 0.04]} rotation={[-0.4, 0, -side * 0.35]}>
+            <boxGeometry args={[0.015, 0.14, 0.015]} />
+          </mesh>
+        ))}
       </group>
     </group>
   );
