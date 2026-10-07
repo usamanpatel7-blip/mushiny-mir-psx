@@ -29,7 +29,10 @@ const CAMS: Record<VozScene, Move> = {
   faceStill: { from: { pos: [0.05, 0.55, 0.8], look: [0, 0, 0.0] } },
   keeperCeil: { from: { pos: [0, 0.12, 0.15], look: [0, 1.8, -0.8] }, to: { pos: [0, 0.12, 0.1], look: [0, 2.2, -0.7] }, dur: 2.3 },
   keeperBack: { from: { pos: [0.4, 1.5, 4.0], look: [-2.5, 2.6, -8] } },
-  lighthouseWall: { from: { pos: [1.2, 1.0, 3.6], look: [0, 3.6, 0] } },
+  beaconBlink: { from: { pos: [0.4, 1.7, 2.2], look: [-3.2, 5.4, -10] } },
+  grinSpread: { from: { pos: [0, 3.4, 0.001], look: [0, 0, 0] } },
+  // the echo of keeperCeil: the same look up from the sand, but nobody is standing over us
+  ceilingUs: { from: { pos: [0, 0.12, 0.1], look: [0, 2.2, -0.6] } },
 };
 
 // --- textures -------------------------------------------------------------------------------------------------
@@ -63,24 +66,6 @@ const tiles = (light = true) =>
       ctx.fillRect(19, 21, 10, 6);
     }
   });
-// whitewash over brick on the lighthouse, flaking where the wind gets at it
-const plaster = () =>
-  pixelTexture(32, 32, (ctx) => {
-    ctx.fillStyle = "#c8c2c6";
-    ctx.fillRect(0, 0, 32, 32);
-    for (let i = 0; i < 6; i++) {
-      const x = Math.floor(hash(i * 5 + 2) * 26);
-      const y = Math.floor(hash(i * 7 + 3) * 28);
-      ctx.fillStyle = "#a88a84";
-      ctx.fillRect(x, y, 5, 2);
-      ctx.fillStyle = "#94766e";
-      ctx.fillRect(x, y + 2, 5, 1);
-    }
-    for (let i = 0; i < 70; i++) {
-      ctx.fillStyle = hash(i) < 0.5 ? "#b4aeb4" : "#d8d2d4";
-      ctx.fillRect(Math.floor(hash(i * 3 + 9) * 32), Math.floor(hash(i * 11 + 4) * 32), 1, 1);
-    }
-  });
 const rep = (t: THREE.Texture, x: number, y: number) => {
   t.wrapS = THREE.RepeatWrapping;
   t.wrapT = THREE.RepeatWrapping;
@@ -107,8 +92,6 @@ const useThings = () =>
       slipper: lam({ color: "#9a4a7a" }),
       slipperSole: lam({ color: "#4a3a3a" }),
       rock: lam({ color: "#5e5670" }),
-      plaster: lam({ map: rep(plaster(), 3, 1) }),
-      plasterRed: lam({ map: rep(plaster(), 3, 1), color: "#d05048" }),
       iron: lam({ color: "#2a2c34" }),
       lamp: flat({ color: "#ffe9a0" }),
       grain: lam({ color: "#5a4c40" }),
@@ -517,9 +500,10 @@ const VozMask: React.FC<{ mats: Mats; cm: CastMats; pos: [number, number, number
 };
 
 // a backrooms ceiling where the sky should be: tiles and fluorescent panels, fading in and out
-const CeilingSky: React.FC<{ k: number }> = ({ k }) => {
+const CeilingSky: React.FC<{ k: number; lit?: number }> = ({ k, lit = 1 }) => {
   const mat = useMemo(() => new THREE.MeshBasicMaterial({ map: rep(tiles(), 10, 10), transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide }), []);
   mat.opacity = k;
+  mat.color.setScalar(0.35 + 0.65 * lit);
   return (
     <mesh material={mat} position={[0, 7, -2]} rotation={[Math.PI / 2, 0, 0]}>
       <planeGeometry args={[40, 40]} />
@@ -527,8 +511,8 @@ const CeilingSky: React.FC<{ k: number }> = ({ k }) => {
   );
 };
 
-// a few ordinary empty faces around a point
-const Around: React.FC<{ mats: Mats; n: number; r: number; at?: [number, number] }> = ({ mats, n, r, at = [0, 0] }) => (
+// a few ordinary empty faces around a point; with `grin` they have caught his smile
+const Around: React.FC<{ mats: Mats; n: number; r: number; at?: [number, number]; grin?: CastMats }> = ({ mats, n, r, at = [0, 0], grin }) => (
   <>
     {Array.from({ length: n }).map((_, i) => {
       const a = (i / n) * Math.PI * 2 + 0.4;
@@ -539,7 +523,9 @@ const Around: React.FC<{ mats: Mats; n: number; r: number; at?: [number, number]
           pos={[at[0] + Math.cos(a) * r * (0.9 + hash(i) * 0.3), 0.02, at[1] + Math.sin(a) * r * (0.9 + hash(i + 2) * 0.3)]}
           rot={[-Math.PI / 2, 0, (hash(i + 4) - 0.5) * 1.2]}
           scale={0.26}
-        />
+        >
+          {grin && <MaskGrin cm={grin} />}
+        </Mask>
       );
     })}
   </>
@@ -616,50 +602,6 @@ const Master: React.FC<{ mats: Mats; t: Things; signs: Signs; s: number; stage: 
     </>
   );
 };
-
-// the lighthouse from close by: plaster over brick, one small window with its frame still in it
-const Tower: React.FC<{ t: Things; mats: Mats; s: number; on: number }> = ({ t, mats, s, on }) => (
-  <group>
-    {Array.from({ length: 6 }).map((_, i) => (
-      <mesh key={i} material={i % 2 ? t.plaster : t.plasterRed} position={[0, 0.75 + i * 1.5, 0]}>
-        <cylinderGeometry args={[1.3 - (0.3 * (i + 1)) / 6, 1.3 - (0.3 * i) / 6, 1.5, 10]} />
-      </mesh>
-    ))}
-    <group position={[0.47, 3.6, 1.1]} rotation={[0, 0.4, 0]}>
-      <mesh material={t.iron}>
-        <planeGeometry args={[0.32, 0.48]} />
-      </mesh>
-      {[-0.24, 0, 0.24].map((y) => (
-        <mesh key={y} material={t.frame} position={[0, y, 0.02]}>
-          <boxGeometry args={[0.36, 0.04, 0.04]} />
-        </mesh>
-      ))}
-      {[-0.16, 0, 0.16].map((x) => (
-        <mesh key={x} material={t.frame} position={[x, 0, 0.02]}>
-          <boxGeometry args={[0.04, 0.5, 0.04]} />
-        </mesh>
-      ))}
-    </group>
-    <mesh material={t.iron} position={[0, 9.1, 0]}>
-      <cylinderGeometry args={[1.3, 1.3, 0.2, 10]} />
-    </mesh>
-    <mesh material={t.lamp} position={[0, 9.7, 0]} scale={0.5 + 0.5 * on}>
-      <cylinderGeometry args={[0.7, 0.7, 1.0, 8]} />
-    </mesh>
-    <mesh material={mats.rock} position={[0, -0.2, 0]} scale={[4, 0.8, 4]}>
-      <dodecahedronGeometry args={[0.8, 0]} />
-    </mesh>
-    {/* sand blowing along the foot of the wall */}
-    {Array.from({ length: 12 }).map((_, i) => {
-      const q = (s * (0.6 + hash(i) * 0.5) + hash(i + 3)) % 1;
-      return (
-        <mesh key={i} material={t.grain} position={[-2 + q * 4, 0.5 + hash(i + 5) * 0.6, 1.5 + hash(i + 7) * 0.8]}>
-          <boxGeometry args={[0.02, 0.02, 0.02]} />
-        </mesh>
-      );
-    })}
-  </group>
-);
 
 // --- scenes ---------------------------------------------------------------------------------------------------------
 const VozWorld: React.FC<{ id: VozScene }> = ({ id }) => {
@@ -925,14 +867,43 @@ const Scene: React.FC<{ id: VozScene; s: number; mats: Mats; cm: CastMats; t: Th
         </>
       );
 
-    case "lighthouseWall":
+    case "beaconBlink":
+      // the senior of the shift hears it, and blinks once, slowly, like an eye
+      return (
+        <>
+          <Shore mats={mats} s={s} edge={-4.5} width={60} amp={0.08} />
+          <Beacon mats={mats} s={s} on={interpolate(s, [1.0, 1.45, 1.75, 2.2], [1, 0, 0, 1], clamp)} />
+          <Around mats={mats} n={7} r={1.8} at={[0.2, -0.6]} />
+        </>
+      );
+
+    case "grinSpread":
+      // his face among the empty ones; one cut later, every face around has his smile
+      return (
+        <>
+          <Sand look={DAWN} size={8} rep={14} />
+          <Around mats={mats} n={7} r={0.95} grin={s >= 1.4 ? cm : undefined} />
+          <Around mats={mats} n={11} r={1.75} grin={s >= 1.4 ? cm : undefined} />
+          <VozMask mats={mats} cm={cm} pos={[0, 0.03, 0.02]} scale={0.42} eyes lift={0.25} />
+        </>
+      );
+
+    case "ceilingUs": {
+      // the sky turns into a ceiling and stays; the tubes flicker with the hum, then everything goes out
+      const OFF: [number, number][] = [
+        [1.9, 1.98],
+        [2.1, 2.14],
+        [4.0, 4.3],
+      ];
+      const lit = OFF.some(([a, b]) => s >= a && s < b) ? 0 : 1;
       return (
         <>
           <Sky look={DAWN} />
-          <Sea mats={mats} s={s} from={-45} to={-3} amp={0.08} />
-          <Tower t={t} mats={mats} s={s} on={interpolate(s, [2.0, 2.3, 2.6, 3.0], [1, 0.2, 0.2, 1], clamp)} />
+          <Sand look={DAWN} size={20} rep={10} />
+          <CeilingSky k={steps(interpolate(s, [0.3, 1.6], [0, 1], clamp), 6)} lit={lit} />
         </>
       );
+    }
   }
 };
 

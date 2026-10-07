@@ -21,7 +21,9 @@ export type VozScene =
   | "faceStill"
   | "keeperCeil"
   | "keeperBack"
-  | "lighthouseWall";
+  | "beaconBlink"
+  | "grinSpread"
+  | "ceilingUs";
 
 export type Shot5 = { kind: "still"; src: string } | { kind: "3d"; id: VozScene };
 
@@ -31,7 +33,7 @@ export type Part = { text: string; from: number; to: number };
 export type Line = { start: number; parts: Part[]; gap: number };
 // cuts and sounds are anchored to a line: `at` is in voice seconds and moves with that line
 export type Cut = { line: number; at: number; shot: Shot5 };
-export type Sfx = { line: number; at: number; src: string; volume: number };
+export type Sfx = { line: number; at: number; src: string; volume: number; dur?: number };
 
 export const FPS = 30;
 export const VOICE = "ep5/voice.wav";
@@ -39,7 +41,7 @@ export const VOICE_LENGTH = 52.7;
 // video second where voice second 0 plays
 export const LEAD = 1.4;
 // after the last word: the ending, then a slow fade
-export const TAIL = 7.0;
+export const TAIL = 10.2;
 
 const k = (id: VozScene): Shot5 => ({ kind: "3d", id });
 const P = (text: string, from: number, to: number): Part => ({ text, from, to });
@@ -68,6 +70,9 @@ export const LINES: Line[] = [
   { start: 50.82, parts: [P("Стены у него ещё были.", 50.98, 52.32)], gap: 0 },
 ];
 
+// voice second (on the last line's clock) where the lights go out and every sound stops with them
+export const SILENCE_AT = 61.0;
+
 export const CUTS: Cut[] = [
   // the voice starts in the dark, over the hiss of a valve; the shore fades up under it
   { line: 0, at: -LEAD, shot: k("black") },
@@ -90,7 +95,12 @@ export const CUTS: Cut[] = [
   { line: 17, at: 44.72, shot: k("faceStill") },
   { line: 17, at: 47.3, shot: k("keeperCeil") },
   { line: 18, at: 48.4, shot: k("keeperBack") },
-  { line: 19, at: 50.82, shot: k("lighthouseWall") },
+  // the ending, without words: the lighthouse blinks; his smile spreads to the faces around him;
+  // then the look up from keeperCeil once more, with nobody between us and the ceiling, until the lights go out
+  { line: 19, at: 50.82, shot: k("beaconBlink") },
+  { line: 19, at: 53.3, shot: k("grinSpread") },
+  { line: 19, at: 56.6, shot: k("ceilingUs") },
+  { line: 19, at: SILENCE_AT, shot: k("black") },
 ];
 
 // every one of his deeds is a sound from somewhere else
@@ -103,7 +113,9 @@ export const SFX: Sfx[] = [
   { line: 9, at: 28.95, src: "ep5/brakes.wav", volume: 0.4 },
   { line: 12, at: 34.4, src: "ep5/buzz.wav", volume: 0.22 },
   { line: 14, at: 38.4, src: "ep5/wind.wav", volume: 0.45 },
-  { line: 19, at: 52.9, src: "ep5/hiss.wav", volume: 0.22 },
+  { line: 19, at: 54.0, src: "ep5/hiss.wav", volume: 0.18 },
+  // the hum starts with the ceiling and is cut with the lights
+  { line: 19, at: 57.4, src: "ep5/buzz.wav", volume: 0.3, dur: SILENCE_AT - 57.4 },
 ];
 
 // the shore under everything from the first image on; «Dusty Soviet Dreams» beneath the voice

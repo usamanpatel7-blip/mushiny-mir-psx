@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Audio, Composition, Img, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { subtitleStyle } from "../Ui";
 import { VozScene3D } from "./World";
-import { CUTS, END, FPS, LINES, MUSIC, SFX, SURF, VOICE, offsets, toVideo, voiceSegments, type Shot5 } from "./script";
+import { CUTS, END, FPS, LINES, MUSIC, SFX, SILENCE_AT, SURF, VOICE, offsets, toVideo, voiceSegments, type Shot5 } from "./script";
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
@@ -47,6 +47,9 @@ export const VozReel: React.FC = () => {
   const off = offsets();
   const speech = LINES.flatMap((l, i) => l.parts.map((p) => [p.from + off[i], p.to + off[i]] as const));
   const surfAt = toVideo(SURF.from.line, SURF.from.at);
+  // when the lights go out, the sea and the music go with them
+  const silence = toVideo(LINES.length - 1, SILENCE_AT);
+  const alive = (t: number) => interpolate(t, [silence - 0.05, silence], [1, 0], clamp);
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {cuts.map((c, i) => {
@@ -69,7 +72,7 @@ export const VozReel: React.FC = () => {
         </Sequence>
       ))}
       {SFX.map((fx, i) => (
-        <Sequence key={`fx${i}`} from={Math.round(toVideo(fx.line, fx.at) * FPS)} layout="none">
+        <Sequence key={`fx${i}`} from={Math.round(toVideo(fx.line, fx.at) * FPS)} durationInFrames={fx.dur ? Math.round(fx.dur * FPS) : undefined} layout="none">
           <Audio src={staticFile(fx.src)} volume={() => fx.volume} />
         </Sequence>
       ))}
@@ -78,7 +81,7 @@ export const VozReel: React.FC = () => {
         <Audio
           src={staticFile(SURF.src)}
           loop
-          volume={(f) => SURF.level * interpolate(f / FPS, [0, 1.6, END - surfAt - 2.2, END - surfAt], [0, 1, 1, 0], clamp)}
+          volume={(f) => SURF.level * alive(surfAt + f / FPS) * interpolate(f / FPS, [0, 1.6, END - surfAt - 2.2, END - surfAt], [0, 1, 1, 0], clamp)}
         />
       </Sequence>
       {MUSIC.map((m, i) => {
@@ -93,7 +96,7 @@ export const VozReel: React.FC = () => {
                 // the music steps back under every phrase and comes forward in the pauses
                 const talking = Math.max(...speech.map(([x, y]) => interpolate(t, [x - 0.25, x, y, y + 0.35], [0, 1, 1, 0], clamp)));
                 const shape = interpolate(t, [a, a + 0.8, b - 1.6, b], [0, 1, 1, 0], clamp);
-                return m.level * shape * (1 - 0.5 * talking);
+                return m.level * shape * alive(t) * (1 - 0.5 * talking);
               }}
             />
           </Sequence>
