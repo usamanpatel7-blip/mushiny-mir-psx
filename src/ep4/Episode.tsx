@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Audio, Composition, Img, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { subtitleStyle } from "../Ui";
 import { FacesScene3D } from "./World";
-import { FPS, REEL1, REEL2, type Reel, type Shot4 } from "./script";
+import { FPS, REEL1, REEL2, offsets, reelEnd, toVideo, voiceSegments, type Reel, type Shot4 } from "./script";
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
@@ -13,17 +13,15 @@ const ShotView: React.FC<{ shot: Shot4 }> = ({ shot }) =>
     <Img src={staticFile(shot.src)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", imageRendering: "pixelated" }} />
   );
 
-// box-less subtitles; each part of a line types itself inside its own speech window
+// box-less subtitles; each part of a line types itself inside its own speech window,
+// and the line leaves the screen during the pause that follows it
 const Subtitles: React.FC<{ reel: Reel }> = ({ reel }) => {
   const t = useCurrentFrame() / FPS;
-  const starts = reel.lines.map((l) => l.parts[0].from - 0.2);
-  let idx = -1;
-  for (let i = 0; i < starts.length; i++) if (t >= starts[i]) idx = i;
+  const off = offsets(reel);
+  const lines = reel.lines.map((l, i) => l.parts.map((p) => ({ text: p.text, from: p.from + off[i], to: p.to + off[i] })));
+  const idx = lines.findIndex((parts) => t >= parts[0].from - 0.2 && t <= parts[parts.length - 1].to + 1.0);
   if (idx < 0) return null;
-  const { parts } = reel.lines[idx];
-  const last = parts[parts.length - 1];
-  // the last line leaves a moment after it is spoken
-  if (idx === reel.lines.length - 1 && t > last.to + 1.6) return null;
+  const parts = lines[idx];
   const full = parts.map((p) => p.text).join("");
   const shown = parts.map((p) => p.text.slice(0, Math.round(interpolate(t, [p.from, p.to], [0, 1], clamp) * p.text.length))).join("");
   return (
@@ -38,13 +36,17 @@ const Subtitles: React.FC<{ reel: Reel }> = ({ reel }) => {
 };
 
 export const FacesReel: React.FC<{ reel: Reel }> = ({ reel }) => {
-  const total = Math.round(reel.end * FPS);
-  const speech = reel.lines.flatMap((l) => l.parts.map((p) => [p.from, p.to] as const));
+  const frame = useCurrentFrame();
+  const end = reelEnd(reel);
+  const total = Math.round(end * FPS);
+  const cuts = reel.cuts.map((c) => ({ at: toVideo(reel, c.line, c.at), shot: c.shot }));
+  const off = offsets(reel);
+  const speech = reel.lines.flatMap((l, i) => l.parts.map((p) => [p.from + off[i], p.to + off[i]] as const));
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {reel.cuts.map((c, i) => {
+      {cuts.map((c, i) => {
         const from = Math.round(c.at * FPS);
-        const to = i + 1 < reel.cuts.length ? Math.round(reel.cuts[i + 1].at * FPS) : total;
+        const to = i + 1 < cuts.length ? Math.round(cuts[i + 1].at * FPS) : total;
         return (
           <Sequence key={i} from={from} durationInFrames={to - from}>
             <ShotView shot={c.shot} />
@@ -52,17 +54,22 @@ export const FacesReel: React.FC<{ reel: Reel }> = ({ reel }) => {
         );
       })}
       <Subtitles reel={reel} />
-      <Sequence from={Math.round(reel.voiceDelay * FPS)} layout="none">
-        <Audio src={staticFile(reel.voice)} volume={1} />
-      </Sequence>
+      {/* the open ending dims slowly, together with the music */}
+      <AbsoluteFill style={{ backgroundColor: "#000", opacity: interpolate(frame / FPS, [end - 2.2, end - 0.2], [0, 1], clamp) }} />
+      {/* the narration, one slice per line, with silence between */}
+      {voiceSegments(reel).map((seg, i) => (
+        <Sequence key={`v${i}`} from={Math.round(seg.at * FPS)} layout="none">
+          <Audio src={staticFile(reel.voice)} trimBefore={Math.round(seg.start * FPS)} trimAfter={Math.round(seg.end * FPS)} volume={1} />
+        </Sequence>
+      ))}
       <Audio
         src={staticFile(reel.music)}
         volume={(f) => {
           const t = f / FPS;
-          // the music steps back under every phrase and breathes in the pauses
+          // the music steps back under every phrase and comes forward in the pauses and the ending
           const talking = Math.max(...speech.map(([a, b]) => interpolate(t, [a - 0.25, a, b, b + 0.35], [0, 1, 1, 0], clamp)));
-          const shape = interpolate(t, [0, 0.8, reel.end - 2.4, reel.end], [0, 1, 1, 0], clamp);
-          return reel.musicLevel * shape * (1 - 0.45 * talking);
+          const shape = interpolate(t, [0, 0.8, end - 3.5, end], [0, 1, 1, 0], clamp);
+          return reel.musicLevel * shape * (1 - 0.5 * talking);
         }}
       />
     </AbsoluteFill>
@@ -71,7 +78,7 @@ export const FacesReel: React.FC<{ reel: Reel }> = ({ reel }) => {
 
 export const FacesComposition = () => (
   <>
-    <Composition id="Faces1" component={FacesReel} defaultProps={{ reel: REEL1 }} durationInFrames={Math.round(REEL1.end * FPS)} fps={FPS} width={1080} height={1920} />
-    <Composition id="Faces2" component={FacesReel} defaultProps={{ reel: REEL2 }} durationInFrames={Math.round(REEL2.end * FPS)} fps={FPS} width={1080} height={1920} />
+    <Composition id="Faces1" component={FacesReel} defaultProps={{ reel: REEL1 }} durationInFrames={Math.round(reelEnd(REEL1) * FPS)} fps={FPS} width={1080} height={1920} />
+    <Composition id="Faces2" component={FacesReel} defaultProps={{ reel: REEL2 }} durationInFrames={Math.round(reelEnd(REEL2) * FPS)} fps={FPS} width={1080} height={1920} />
   </>
 );

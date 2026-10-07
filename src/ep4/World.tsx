@@ -53,6 +53,9 @@ const LOOK: Record<FacesScene, Look> = {
   whisperMask: GREY,
   lighthouse: GREY,
   crateFly: GREY,
+  dawnGod: DAWN,
+  crateLid: GREY,
+  lighthouseEnd: GREY,
 };
 
 // fixed cameras only
@@ -69,6 +72,10 @@ const CAMS: Record<FacesScene, Cam> = {
   whisperMask: { pos: [0.3, 0.62, 0.78], look: [0, 0.06, 0.08] },
   lighthouse: { pos: [0.5, 3.0, 4.5], look: [-2.5, 4.6, -10] },
   crateFly: { pos: [0, 4.3, 0.001], look: [0, 0, 0] },
+  crateLid: { pos: [0, 4.3, 0.001], look: [0, 0, 0] },
+  dawnGod: { pos: [0, 3.2, 9], look: [0, 5, -20] },
+  // close on the lantern: the brain inside is the senior of the shift
+  lighthouseEnd: { pos: [-2.0, 6.7, -6.3], look: [-3.2, 7.1, -10] },
 };
 
 // --- shared geometry ----------------------------------------------------------------------------------------
@@ -81,8 +88,8 @@ const EYES: [number, number][] = [
 ];
 const MOUTH: [number, number] = [0, -0.48];
 
-const maskGeos = () => {
-  const shell = new THREE.SphereGeometry(1, 9, 7, 0, Math.PI, 0, Math.PI);
+const maskGeos = (lod: number) => {
+  const shell = lod === 0 ? new THREE.SphereGeometry(1, 5, 4, 0, Math.PI, 0, Math.PI) : new THREE.SphereGeometry(1, 9, 7, 0, Math.PI, 0, Math.PI);
   shell.scale(0.75, 1, MASK_DEPTH);
   const nose = new THREE.ConeGeometry(0.1, 0.32, 4);
   nose.rotateX(Math.PI / 2 + 0.25);
@@ -97,8 +104,9 @@ const maskGeos = () => {
   });
   return { shell: mergeGeometries([shell.toNonIndexed(), nose.toNonIndexed()]), holes: mergeGeometries(holes.map((h) => h.toNonIndexed())) };
 };
-let GEOS: ReturnType<typeof maskGeos> | null = null;
-const geos = () => (GEOS ??= maskGeos());
+// lod 0 = an older patch of the face, lod 1 = the current one
+const GEOS: ReturnType<typeof maskGeos>[] = [];
+const geos = (lod = 1) => (GEOS[lod] ??= maskGeos(lod));
 
 const useMats = (look: Look) =>
   useMemo(
@@ -118,10 +126,16 @@ const useMats = (look: Look) =>
       foam: basic({ color: "#e8eef2" }),
       wet: lambert({ color: look.sandDark }),
       grain: lambert({ color: "#5a4c40" }),
+      kriptanShell: lambert({ color: "#4a4850", side: THREE.DoubleSide }),
+      kriptanEye: basic({ color: "#f2eee6" }),
+      lavash: lambert({ color: "#d8b478", side: THREE.DoubleSide }),
+      lavashBurn: lambert({ color: "#8a5a2c" }),
+      kebabEye: lambert({ color: "#6e9a3a", emissive: "#1a2a08" }),
+      voidLine: basic({ color: "#c8ffd8", side: THREE.DoubleSide }),
+      voidBlack: basic({ color: "#06080a", side: THREE.DoubleSide }),
+      plank: lambert({ color: "#5e6244" }),
       sunGlow: basic({ color: look.sun, transparent: true, opacity: 0.45, fog: false }),
       sunDisc: basic({ color: look.sun, fog: false }),
-      pool: basic({ color: "#a8aec4", side: THREE.DoubleSide }),
-      poolRing: basic({ color: "#d8dce6", side: THREE.DoubleSide }),
     }),
     [look],
   );
@@ -234,18 +248,70 @@ type MaskProps = {
   fly?: number;
   insideUp?: boolean;
   old?: boolean;
+  lod?: number;
+  // faces from earlier episodes, found in the crates
+  variant?: "plain" | "kriptan" | "lavash";
   visible?: boolean;
   children?: React.ReactNode;
 };
 
-const Mask: React.FC<MaskProps> = ({ mats, pos, rot, scale, jaw = 0, pupils = 0, gaze = 0, fly = 0, insideUp = false, old = false, visible = true, children }) => {
-  const g = geos();
+const Mask: React.FC<MaskProps> = ({
+  mats,
+  pos,
+  rot,
+  scale,
+  jaw = 0,
+  pupils = 0,
+  gaze = 0,
+  fly = 0,
+  insideUp = false,
+  old = false,
+  lod = 1,
+  variant = "plain",
+  visible = true,
+  children,
+}) => {
+  const g = geos(lod);
   const r = rot ?? (insideUp ? [Math.PI / 2, 0, Math.PI] : [-Math.PI / 2, 0, 0]);
   const mouthH = 0.045 + jaw * 0.2;
   return (
     <group position={pos} rotation={r} scale={scale} visible={visible}>
-      <mesh geometry={g.shell} material={old ? mats.maskOld : mats.mask} />
+      <mesh geometry={g.shell} material={variant === "kriptan" ? mats.kriptanShell : variant === "lavash" ? mats.lavash : old ? mats.maskOld : mats.mask} />
       <mesh geometry={g.holes} material={mats.hole} />
+      {/* Kriptan sold even his face: the two big white eyes give him away */}
+      {variant === "kriptan" &&
+        EYES.map(([x, y], i) => (
+          <group key={`k${i}`} position={[x * 1.15, y + 0.05, surfaceZ(x, y) + 0.12]}>
+            <mesh material={mats.kriptanEye} scale={[1.15, 1.05, 0.9]}>
+              <icosahedronGeometry args={[0.3, 1]} />
+            </mesh>
+            <mesh material={mats.hole} position={[x > 0 ? -0.07 : 0.07, -0.02, 0.28]}>
+              <circleGeometry args={[0.07, 5]} />
+            </mesh>
+          </group>
+        ))}
+      {/* the Kebab-Maker wrapped one too: a flap of lavash over the brow, his green eyes inside */}
+      {variant === "lavash" && (
+        <>
+          <mesh material={mats.lavash} position={[0, 0.62, surfaceZ(0, 0.62) + 0.06]} rotation={[-0.5, 0, 0.06]}>
+            <boxGeometry args={[1.5, 0.55, 0.03]} />
+          </mesh>
+          {[
+            [-0.4, 0.66],
+            [0.25, 0.58],
+            [0.5, 0.7],
+          ].map(([x, y], i) => (
+            <mesh key={`b${i}`} material={mats.lavashBurn} position={[x, y, surfaceZ(0, 0.62) + 0.085]} rotation={[-0.5, 0, 0]}>
+              <circleGeometry args={[0.05, 5]} />
+            </mesh>
+          ))}
+          {EYES.map(([x, y], i) => (
+            <mesh key={`e${i}`} material={mats.kebabEye} position={[x, y, surfaceZ(x, y) - 0.02]}>
+              <icosahedronGeometry args={[0.12, 0]} />
+            </mesh>
+          ))}
+        </>
+      )}
       {/* mouth slit: it opens downwards */}
       <mesh material={mats.hole} position={[MOUTH[0], MOUTH[1] - jaw * 0.08, surfaceZ(MOUTH[0], MOUTH[1]) + 0.02]} rotation={[0.45, 0, 0]}>
         <boxGeometry args={[0.36, mouthH, 0.02]} />
@@ -390,9 +456,8 @@ const Limb: React.FC<{ mats: Mats; reach: number; shake: number }> = ({ mats, re
   </group>
 );
 
-const Lighthouse: React.FC<{ mats: Mats; on: number }> = ({ mats, on }) => {
-  const lamp = useMemo(() => basic({ color: "#fff2b0" }), []);
-  const dark = useMemo(() => basic({ color: "#2a2c34" }), []);
+const Lighthouse: React.FC<{ mats: Mats; on: number; s: number }> = ({ mats, on, s }) => {
+  const glass = useMemo(() => basic({ color: "#2a2c34", transparent: true, opacity: 0.55, depthWrite: false }), []);
   const glow = useMemo(() => basic({ color: "#ffe9a0", transparent: true, opacity: 0.35, depthWrite: false }), []);
   glow.opacity = 0.35 * on;
   return (
@@ -407,18 +472,81 @@ const Lighthouse: React.FC<{ mats: Mats; on: number }> = ({ mats, on }) => {
       <mesh material={mats.keeper} position={[0, 6.8, 0]}>
         <cylinderGeometry args={[0.62, 0.62, 0.12, 8]} />
       </mesh>
-      <mesh material={on > 0.5 ? lamp : dark} position={[0, 7.15, 0]}>
-        <cylinderGeometry args={[0.36, 0.36, 0.55, 8]} />
+      {/* the lantern: a glass drum, and inside it the brain of the god */}
+      <mesh material={glass} position={[0, 7.15, 0]}>
+        <cylinderGeometry args={[0.36, 0.36, 0.55, 8, 1, true]} />
       </mesh>
+      <Connectome s={s} k={0.15 + 0.85 * on} pos={[0, 7.15, 0]} scale={0.12} />
       <mesh material={mats.keeper} position={[0, 7.65, 0]}>
         <coneGeometry args={[0.5, 0.5, 8]} />
       </mesh>
-      <mesh material={glow} position={[0, 7.15, 0.6]}>
+      <mesh material={glow} position={[0, 7.15, -0.5]}>
         <circleGeometry args={[1.4, 10]} />
       </mesh>
       {on > 0 && <pointLight position={[0, 7.2, 1.2]} intensity={6 * on} distance={14} color="#ffe2a0" />}
     </group>
   );
+};
+
+// the god of this world: a drosophila connectome, threads of colour that pulse
+const Connectome: React.FC<{ s: number; k: number; pos: [number, number, number]; scale: number }> = ({ s, k, pos, scale }) => {
+  const { lines, base, phase, step } = useMemo(() => {
+    let seed = 7;
+    const rnd = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    const LOBES = [
+      [-1.15, 0, 0, 1.3, 1, 0.8],
+      [1.15, 0, 0, 1.3, 1, 0.8],
+      [0, -0.55, 0, 0.7, 0.55, 0.6],
+    ];
+    const inside = (x: number, y: number, z: number) => LOBES.some(([cx, cy, cz, rx, ry, rz]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + ((z - cz) / rz) ** 2 < 1);
+    const p: number[] = [];
+    const c: number[] = [];
+    const ph: number[] = [];
+    const st: number[] = [];
+    for (let n = 0; n < 1100; n++) {
+      let x = (rnd() - 0.5) * 5.2;
+      let y = (rnd() - 0.5) * 2.4;
+      let z = (rnd() - 0.5) * 1.8;
+      if (!inside(x, y, z)) continue;
+      const col = new THREE.Color().setHSL(rnd(), 0.85, 0.62);
+      const p0 = rnd() * Math.PI * 2;
+      let a = rnd() * Math.PI * 2;
+      for (let j = 0; j < 10; j++) {
+        a += (rnd() - 0.5) * 0.9;
+        const nx = x + Math.cos(a) * 0.17;
+        const ny = y + Math.sin(a) * 0.17;
+        const nz = z + (rnd() - 0.5) * 0.1;
+        if (!inside(nx, ny, nz)) {
+          a += Math.PI;
+          continue;
+        }
+        p.push(x, y, z, nx, ny, nz);
+        c.push(col.r, col.g, col.b, col.r, col.g, col.b);
+        ph.push(p0, p0);
+        st.push(j, j + 1);
+        x = nx;
+        y = ny;
+        z = nz;
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(p, 3));
+    g.setAttribute("color", new THREE.Float32BufferAttribute(c.slice(), 3));
+    const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, fog: false });
+    return { lines: new THREE.LineSegments(g, mat), base: Float32Array.from(c), phase: ph, step: st };
+  }, []);
+  (lines.material as THREE.LineBasicMaterial).opacity = k;
+  const colors = lines.geometry.attributes.color as THREE.BufferAttribute;
+  for (let i = 0; i < phase.length; i++) {
+    const w = Math.sin(phase[i] + step[i] * 0.6 - s * 2.4);
+    const b = 0.35 + 0.65 * w * w;
+    colors.setXYZ(i, base[i * 3] * b, base[i * 3 + 1] * b, base[i * 3 + 2] * b);
+  }
+  colors.needsUpdate = true;
+  return <primitive object={lines} position={pos} scale={scale} />;
 };
 
 // --- scenes ---------------------------------------------------------------------------------------------------
@@ -459,12 +587,23 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
           <Sky look={look} />
           <Sea mats={mats} s={s} from={-45} to={6} opacity={0.55} amp={0.06} />
           {/* rows of faces just under the surface, drifting to shore */}
+          {/* every row is another patch: the older ones arrive with fewer polygons */}
           {Array.from({ length: 34 }).map((_, i) => {
             const row = Math.floor(i / 5);
             const col = i % 5;
             const z = -11 + row * 2.1 + ((s * 0.45) % 2.1) + hash(i) * 0.5;
             const x = (col - 2) * 1.25 + (hash(i + 5) - 0.5) * 0.6;
-            return <Mask key={i} mats={mats} pos={[x, -0.1 + Math.sin(s * 1.5 + i) * 0.03, z]} rot={[-Math.PI / 2 + 0.25, 0, (hash(i + 9) - 0.5) * 0.8]} scale={0.36} />;
+            return (
+              <Mask
+                key={i}
+                mats={mats}
+                pos={[x, -0.1 + Math.sin(s * 1.5 + i) * 0.03, z]}
+                rot={[-Math.PI / 2 + 0.25, 0, (hash(i + 9) - 0.5) * 0.8]}
+                scale={0.36}
+                lod={row % 2}
+                old={row % 2 === 0}
+              />
+            );
           })}
           {/* dark bed far below */}
           <mesh material={mats.wet} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.2, -20]}>
@@ -532,7 +671,7 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
         </>
       )}
 
-      {(id === "crateTop" || id === "crateFly") && (() => {
+      {(id === "crateTop" || id === "crateFly" || id === "crateLid") && (() => {
         const w = 1.5;
         const d = 2.4;
         const slots: [number, number][] = [];
@@ -545,14 +684,15 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
             <Crate mats={mats} w={w} d={d} h={0.8} />
             {/* the bottom layer */}
             {slots.map(([x, z], i) => (
-              <Mask key={`b${i}`} mats={mats} pos={[x + 0.1, 0.28, z + 0.12]} rot={[-Math.PI / 2 + 0.3, 0, 0.2]} scale={0.27} old />
+              <Mask key={`b${i}`} mats={mats} pos={[x + 0.1, 0.28, z + 0.12]} rot={[-Math.PI / 2 + 0.3, 0, 0.2]} scale={0.27} old lod={0} />
             ))}
             {slots.map(([x, z], i) => {
               if (id === "crateTop" && i === last) {
                 // the last face is lowered into its place
                 return <Mask key={i} mats={mats} pos={[x, 3.6 - drop * 3.08, z]} rot={[-Math.PI / 2 + 0.25 * (1 - drop), 0, 0.5 * (1 - drop)]} scale={0.29} />;
               }
-              const mine = id === "crateFly" && i === 4;
+              const mine = id !== "crateTop" && i === 4;
+              const variant = id === "crateTop" && i === 5 ? "kriptan" : id !== "crateTop" && i === 9 ? "lavash" : "plain";
               return (
                 <Mask
                   key={i}
@@ -561,9 +701,20 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
                   rot={[-Math.PI / 2 + 0.22, 0, (hash(i) - 0.5) * 0.25 + (mine ? interpolate(s, [3, 5], [0, 0.35], clamp) : 0)]}
                   scale={0.29}
                   fly={mine ? 1 : 0}
+                  variant={variant}
                 />
               );
             })}
+            {/* the shift goes on as usual: the lid goes on, plank by plank */}
+            {id === "crateLid" &&
+              [0, 1, 2, 3].map((j) => {
+                const k = ease((s - 0.4 - j * 0.5) / 0.35);
+                return (
+                  <mesh key={j} material={j % 2 ? mats.plank : mats.wood} position={[2.6 * (1 - k), 0.86, (j - 1.5) * 0.6]}>
+                    <boxGeometry args={[1.62, 0.06, 0.58]} />
+                  </mesh>
+                );
+              })}
           </>
         );
       })()}
@@ -612,7 +763,7 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
           {Array.from({ length: 40 }).map((_, i) => {
             const c = i % 5;
             const r = Math.floor(i / 5);
-            const open = s > 3.0 + i * 0.045 && s < 5.2 ? 1 : 0;
+            const open = s > 3.4 + i * 0.04 && s < 5.6 ? 1 : 0;
             return (
               <Mask
                 key={i}
@@ -628,20 +779,31 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
       )}
 
       {id === "insideUp" && (() => {
-        const reach = interpolate(s, [0.6, 1.7, 3.4, 4.3], [0, 1, 1, 0], clamp);
-        const shake = s > 1.7 && s < 3.4 ? (Math.floor(s * 15) % 2 ? 0.006 : -0.006) : 0;
-        const ripple = (s * 0.6) % 1;
+        const reach = interpolate(s, [0.6, 1.7, 3.6, 4.4], [0, 1, 1, 0], clamp);
+        const shake = s > 1.7 && s < 3.6 ? (Math.floor(s * 15) % 2 ? 0.006 : -0.006) : 0;
         return (
           <>
             <Sand look={look} size={6} rep={6} />
             <Mask mats={mats} pos={[0, 0.2, 0]} scale={0.47} insideUp>
-              {/* seawater in the hollow, holding the sky */}
-              <mesh material={mats.pool} position={[0, 0.05, 0.16]}>
-                <circleGeometry args={[0.6, 9]} />
-              </mesh>
-              <mesh material={mats.poolRing} position={[0.1, 0.12, 0.165]} scale={0.15 + ripple * 0.35}>
-                <ringGeometry args={[0.8, 1, 9]} />
-              </mesh>
+              {/* inside, the face is not a face: the raw polygon grid from ep2, falling away into nothing */}
+              <group position={[0, 0, 0.17]} scale={[0.62, 0.85, 1]}>
+                <mesh material={mats.voidBlack}>
+                  <circleGeometry args={[1, 16]} />
+                </mesh>
+                {Array.from({ length: 7 }).map((_, j) => {
+                  const r = 1 - ((j / 7 + s * 0.22) % 1);
+                  return (
+                    <mesh key={j} material={mats.voidLine} position={[0, 0, -0.005]} scale={r * r}>
+                      <ringGeometry args={[0.96, 1, 16]} />
+                    </mesh>
+                  );
+                })}
+                {Array.from({ length: 12 }).map((_, j) => (
+                  <mesh key={`r${j}`} material={mats.voidLine} position={[0, 0, -0.006]} rotation={[0, 0, (j / 12) * Math.PI * 2]}>
+                    <planeGeometry args={[0.012, 2]} />
+                  </mesh>
+                ))}
+              </group>
             </Mask>
             <Limb mats={mats} reach={reach} shake={shake} />
           </>
@@ -654,7 +816,7 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
           <Mask mats={mats} pos={[0, 0.03, 0]} rot={[-Math.PI / 2, 0, 0.15]} scale={0.5}>
             {/* grains of sand hop at the mouth while it speaks */}
             {Array.from({ length: 14 }).map((_, i) => {
-              const talking = s > 1.8 && s < 3.9;
+              const talking = s > 2.3 && s < 4.35;
               const hop = talking ? Math.abs(Math.sin(s * 22 + i * 1.9)) * 0.07 * (0.4 + hash(i + 4)) : 0;
               const a = (i / 14) * Math.PI * 2;
               return (
@@ -671,7 +833,42 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
         <>
           <Sky look={look} />
           <Sea mats={mats} s={s} from={-45} to={8} amp={0.1} />
-          <Lighthouse mats={mats} on={s > 0.5 ? 1 : 0} />
+          <Lighthouse mats={mats} on={s > 0.3 ? 1 : 0} s={s} />
+        </>
+      )}
+
+      {id === "lighthouseEnd" && (
+        <>
+          <Sky look={look} />
+          <Sea mats={mats} s={s} from={-45} to={8} amp={0.1} />
+          {/* it blinks once, slowly, like an eye */}
+          <Lighthouse mats={mats} on={interpolate(s, [1.6, 1.9, 2.2, 2.6], [1, 0, 0, 1], clamp)} s={s} />
+        </>
+      )}
+
+      {id === "dawnGod" && (
+        <>
+          <Sky look={look} />
+          <Sand look={look} size={80} rep={26} />
+          <Sea mats={mats} s={s} from={-45} to={-12.6} amp={0.08} />
+          <mesh material={mats.foam} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -12.6]}>
+            <planeGeometry args={[80, 0.14]} />
+          </mesh>
+          <Cliffs mats={mats} />
+          <MaskField mats={mats} items={field} />
+          {/* the keepers straighten up and look at the sky */}
+          {[
+            [2.2, -2, -0.6],
+            [-3.5, -7, 0.4],
+            [5.5, -9.5, -1.2],
+          ].map(([x, z, yaw], i) => (
+            <Keeper key={i} mats={mats} x={x} z={z} yaw={yaw} s={1.15} bend={interpolate(Math.floor(s * 3) / 3, [1.8 + i * 0.3, 3.2 + i * 0.3], [0.9, -0.35], clamp)} />
+          ))}
+          <mesh material={mats.sunDisc} position={[4, interpolate(s, [0, 6], [-2.4, -0.4]), -44]}>
+            <circleGeometry args={[2.6, 12]} />
+          </mesh>
+          {/* the god opens its eyes: the connectome surfaces in the dawn sky, barely */}
+          <Connectome s={s} k={interpolate(s, [1.5, 4.5], [0, 0.5], clamp)} pos={[0, 15, -40]} scale={5.5} />
         </>
       )}
     </>
