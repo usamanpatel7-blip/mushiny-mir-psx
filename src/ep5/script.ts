@@ -106,10 +106,10 @@ export const SFX: Sfx[] = [
   { line: 19, at: 52.9, src: "ep5/hiss.wav", volume: 0.22 },
 ];
 
-// the shore under everything from the first image on; the ep4 shore theme low beneath the voice
-export const SURF = { src: "ep5/surf.wav", level: 0.5, from: { line: 0, at: 1.9 } };
+// the shore under everything from the first image on; «Dusty Soviet Dreams» beneath the voice
+export const SURF = { src: "ep5/surf.wav", level: 0.28, from: { line: 0, at: 1.9 } };
 type Anchor = { line: number; at: number };
-export const MUSIC: { src: string; level: number; from: Anchor; to: Anchor | null }[] = [{ src: "ep4/music-1.mp3", level: 0.13, from: { line: 0, at: 1.2 }, to: null }];
+export const MUSIC: { src: string; level: number; from: Anchor; to: Anchor | null }[] = [{ src: "audio/dusty1.mp3", level: 0.24, from: { line: 0, at: 1.2 }, to: null }];
 
 // voice second -> video second for a given line
 export const offsets = () => LINES.map((_, i) => LEAD + LINES.slice(0, i).reduce((a, l) => a + l.gap, 0));

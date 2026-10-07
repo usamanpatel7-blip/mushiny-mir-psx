@@ -3,7 +3,7 @@ import { useThree } from "@react-three/fiber";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { CameraRig, Ps1Canvas, pixelTexture, type Cam } from "../ps1kit";
-import { Cliffs, Crate, DAWN, EYES, Keeper, Lighthouse, Mask, MaskField, Sand, Sea, Sky, surfaceZ, useMats, type Mats } from "../ep4/World";
+import { Cliffs, Connectome, Crate, DAWN, EYES, Mask, MaskField, Sand, Sea, Sky, surfaceZ, useMats, type Mats } from "../ep4/World";
 import { clamp, ease, emblemTexture, flat, hash, lam, lettering, steps, useCastMats, useEyeGeo, useFontReady, type CastMats } from "./Cast";
 import type { VozScene } from "./script";
 
@@ -13,23 +13,23 @@ const MASTER: Cam = { pos: [4.6, 2.5, 9.5], look: [0.6, 0.4, -6] };
 const CAMS: Record<VozScene, Move> = {
   black: { from: MASTER },
   shoreMain: { from: MASTER },
-  wallChunk: { from: { pos: [1.2, 0.75, 2.0], look: [0, 0.15, -0.3] }, to: { pos: [1.1, 0.7, 1.8], look: [0, 0.15, -0.3] }, dur: 2.4 },
-  flipPage: { from: { pos: [0.35, 0.8, 1.45], look: [0, 0.55, 0] }, to: { pos: [0.3, 0.78, 1.25], look: [0, 0.55, 0] }, dur: 3.7 },
+  wallChunk: { from: { pos: [1.2, 0.75, 2.0], look: [0, 0.15, -0.3] } },
+  flipPage: { from: { pos: [0.35, 0.8, 1.45], look: [0, 0.55, 0] } },
   frameSurf: { from: { pos: [0.1, 0.55, 1.35], look: [0, 0.0, -0.5] } },
   armchair: { from: { pos: [0.7, 1.0, 3.3], look: [-0.3, 0.55, -4] } },
   doorway: { from: { pos: [0.15, 1.15, 2.7], look: [0, 1.05, -3] } },
-  busSeat: { from: { pos: [0.9, 0.5, 1.7], look: [0, 0.3, -0.3] }, to: { pos: [0.8, 0.48, 1.5], look: [0, 0.3, -0.3] }, dur: 3.4 },
+  busSeat: { from: { pos: [0.9, 0.5, 1.7], look: [0, 0.3, -0.3] } },
   exitSign: { from: { pos: [0.25, 0.85, 0.75], look: [0, 0, -0.05] } },
   shoreKeeper: { from: MASTER },
   ceilingTile: { from: { pos: [0.55, 1.15, 1.35], look: [0, 0, -0.05] } },
-  slipper: { from: { pos: [0.22, 0.17, 0.0], look: [0, 0.03, -0.55] } },
+  slipper: { from: { pos: [0.3, 0.32, 0.45], look: [0, 0.02, -0.6] } },
   shoreMasks: { from: MASTER },
-  faceTop: { from: { pos: [0, 1.3, 0.001], look: [0, 0, 0] }, to: { pos: [0, 1.1, 0.001], look: [0, 0, 0] }, dur: 1.9 },
+  faceTop: { from: { pos: [0, 1.3, 0.001], look: [0, 0, 0] } },
   faceOpen: { from: { pos: [0, 1.0, 0.001], look: [0, 0, 0] } },
-  faceStill: { from: { pos: [0.05, 0.55, 0.8], look: [0, 0, 0.0] }, to: { pos: [0.04, 0.48, 0.7], look: [0, 0, 0.0] }, dur: 2.6 },
+  faceStill: { from: { pos: [0.05, 0.55, 0.8], look: [0, 0, 0.0] } },
   keeperCeil: { from: { pos: [0, 0.12, 0.15], look: [0, 1.8, -0.8] }, to: { pos: [0, 0.12, 0.1], look: [0, 2.2, -0.7] }, dur: 2.3 },
-  keeperBack: { from: { pos: [0.4, 1.5, 4.0], look: [-2.5, 2.6, -8] }, to: { pos: [0.3, 1.45, 3.6], look: [-2.6, 2.8, -8] }, dur: 3.4 },
-  lighthouseWall: { from: { pos: [1.2, 1.0, 3.6], look: [0, 3.6, 0] }, to: { pos: [1.1, 1.0, 3.3], look: [0, 3.8, 0] }, dur: 8 },
+  keeperBack: { from: { pos: [0.4, 1.5, 4.0], look: [-2.5, 2.6, -8] } },
+  lighthouseWall: { from: { pos: [1.2, 1.0, 3.6], look: [0, 3.6, 0] } },
 };
 
 // --- textures -------------------------------------------------------------------------------------------------
@@ -107,7 +107,8 @@ const useThings = () =>
       slipper: lam({ color: "#9a4a7a" }),
       slipperSole: lam({ color: "#4a3a3a" }),
       rock: lam({ color: "#5e5670" }),
-      plaster: lam({ map: rep(plaster(), 3, 4) }),
+      plaster: lam({ map: rep(plaster(), 3, 1) }),
+      plasterRed: lam({ map: rep(plaster(), 3, 1), color: "#d05048" }),
       iron: lam({ color: "#2a2c34" }),
       lamp: flat({ color: "#ffe9a0" }),
       grain: lam({ color: "#5a4c40" }),
@@ -155,32 +156,30 @@ const swell = (s: number, period: number, phase = 0) => {
   return c < 0.3 ? ease(c / 0.3) : 1 - ease((c - 0.3) / 0.7);
 };
 // the open sea ends at `edge`; a sheet of water and a line of foam run up the sand as far as edge + reach * swell
-const Shore: React.FC<{ mats: Mats; s: number; edge: number; reach: number; period?: number; phase?: number; width?: number; amp?: number; grain?: number }> = ({
+const Shore: React.FC<{ mats: Mats; s: number; edge: number; reach?: number; period?: number; phase?: number; width?: number; amp?: number; grain?: number }> = ({
   mats,
   s,
   edge,
-  reach,
-  period = 4.2,
+  reach = 0.25,
+  period = 6.5,
   phase = 0,
   width = 30,
   amp = 0.05,
   grain = 18,
 }) => {
-  const z = edge + reach * swell(s, period, phase);
+  // the foam only breathes at the edge: a few hand-widths up the sand and back, slowly
+  const z = edge + Math.min(reach, 0.3) * swell(s, Math.max(period, 6), phase);
   return (
     <>
       <Sky look={DAWN} />
       <Sand look={DAWN} rep={grain} />
-      <mesh material={mats.wet} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, edge + reach / 2 + 0.3]}>
-        <planeGeometry args={[width, reach + 0.6]} />
+      <mesh material={mats.wet} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, edge + 0.35]}>
+        <planeGeometry args={[width, 0.8]} />
       </mesh>
-      <Sea mats={mats} s={s} from={-45} to={edge} amp={amp} />
-      <mesh material={mats.sea} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, (edge + z) / 2]} scale={[1, Math.max(0.01, z - edge), 1]}>
-        <planeGeometry args={[width, 1]} />
-      </mesh>
+      <Sea mats={mats} s={s} from={-45} to={z} amp={amp} />
       {Array.from({ length: 24 }).map((_, i) => (
-        <mesh key={i} material={mats.foam} position={[-width / 4 + i * (width / 2 / 24), 0.03, z + (hash(i) - 0.5) * 0.14]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[width / 2 / 24 + 0.05, 0.1 + hash(i + 3) * 0.1]} />
+        <mesh key={i} material={mats.foam} position={[-width / 4 + i * (width / 2 / 24), 0.03, z + (hash(i) - 0.5) * 0.08]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[width / 2 / 24 + 0.05, 0.08 + hash(i + 3) * 0.06]} />
         </mesh>
       ))}
     </>
@@ -303,6 +302,129 @@ const CeilingTile: React.FC<{ t: Things; on: boolean }> = ({ t, on }) => (
     ))}
   </group>
 );
+
+// --- the keeper -------------------------------------------------------------------------------------------------------
+// the keeper of the shift, dressed: a long oilskin coat with a collar, boots, a peaked cap; under it a fly's head
+const useKeeperMats = () =>
+  useMemo(
+    () => ({
+      coat: lam({ color: "#3e4a3a" }),
+      coatDark: lam({ color: "#2c3628" }),
+      boot: lam({ color: "#1c1a18" }),
+      cap: lam({ color: "#22283a" }),
+      badge: lam({ color: "#c8a040", emissive: "#2a1c00" }),
+      head: lam({ color: "#3c3634" }),
+      eye: lam({ color: "#c43a24", emissive: "#3a0a04" }),
+      button: lam({ color: "#b89040" }),
+    }),
+    [],
+  );
+const DressedKeeper: React.FC<{ pos: [number, number, number]; yaw: number; scale?: number; look?: number; turn?: number }> = ({ pos, yaw, scale = 1, look = 0, turn = 0 }) => {
+  const m = useKeeperMats();
+  return (
+    <group position={pos} rotation={[0, yaw, 0]} scale={scale}>
+      {[-0.09, 0.09].map((x) => (
+        <mesh key={x} material={m.boot} position={[x, 0.1, 0.02]}>
+          <boxGeometry args={[0.11, 0.2, 0.2]} />
+        </mesh>
+      ))}
+      <mesh material={m.coat} position={[0, 0.78, 0]}>
+        <cylinderGeometry args={[0.19, 0.3, 1.16, 7]} />
+      </mesh>
+      {/* the front seam and its buttons */}
+      <mesh material={m.coatDark} position={[0, 0.78, 0.235]} rotation={[-0.09, 0, 0]}>
+        <boxGeometry args={[0.02, 1.1, 0.01]} />
+      </mesh>
+      {[1.2, 1.0, 0.8, 0.6].map((y) => (
+        <mesh key={y} material={m.button} position={[0.04, y, 0.26 - (1.36 - y) * 0.09]}>
+          <boxGeometry args={[0.025, 0.025, 0.01]} />
+        </mesh>
+      ))}
+      <mesh material={m.coat} position={[0, 1.34, 0]} scale={[1, 0.4, 0.75]}>
+        <boxGeometry args={[0.5, 0.2, 0.36]} />
+      </mesh>
+      {/* sleeves hang straight, hands hidden in them */}
+      {[-0.27, 0.27].map((x) => (
+        <mesh key={`s${x}`} material={m.coatDark} position={[x, 1.02, 0.02]} rotation={[0, 0, x > 0 ? 0.08 : -0.08]}>
+          <boxGeometry args={[0.11, 0.62, 0.13]} />
+        </mesh>
+      ))}
+      {/* a turned-up collar */}
+      <mesh material={m.coatDark} position={[0, 1.44, 0]}>
+        <cylinderGeometry args={[0.13, 0.17, 0.14, 7, 1, true]} />
+      </mesh>
+      <group position={[0, 1.58, 0.02]} rotation={[look, turn, 0]}>
+        <mesh material={m.head} scale={[1, 1, 1.1]}>
+          <dodecahedronGeometry args={[0.13]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} material={m.eye} position={[side * 0.085, 0.01, 0.08]} scale={[1, 1.15, 0.9]}>
+            <icosahedronGeometry args={[0.075, 0]} />
+          </mesh>
+        ))}
+        {/* the peaked cap with a little badge */}
+        <mesh material={m.cap} position={[0, 0.12, 0]}>
+          <cylinderGeometry args={[0.15, 0.13, 0.07, 8]} />
+        </mesh>
+        <mesh material={m.cap} position={[0, 0.09, 0.13]} rotation={[0.3, 0, 0]}>
+          <boxGeometry args={[0.2, 0.015, 0.09]} />
+        </mesh>
+        <mesh material={m.badge} position={[0, 0.125, 0.15]}>
+          <boxGeometry args={[0.04, 0.03, 0.01]} />
+        </mesh>
+      </group>
+    </group>
+  );
+};
+
+// the senior of the shift: a red and white lighthouse on its headland, the god's brain in the lantern
+const useBeaconMats = () =>
+  useMemo(
+    () => ({
+      red: lam({ color: "#b8382e" }),
+      white: lam({ color: "#e4e0dc" }),
+      iron: lam({ color: "#2a2c34" }),
+      glass: flat({ color: "#2a2c34", transparent: true, opacity: 0.5, depthWrite: false }),
+      glow: flat({ color: "#ffe9a0", transparent: true, opacity: 0.35, depthWrite: false }),
+    }),
+    [],
+  );
+const BANDS = 6;
+const Beacon: React.FC<{ mats: Mats; s: number; on?: number }> = ({ mats, s, on = 1 }) => {
+  const m = useBeaconMats();
+  m.glow.opacity = 0.35 * on;
+  return (
+    <group position={[-3.2, 0, -10]}>
+      <mesh material={mats.rock} position={[0, 1.2, 0]} scale={[7, 2.6, 5]}>
+        <dodecahedronGeometry args={[0.6, 0]} />
+      </mesh>
+      {Array.from({ length: BANDS }).map((_, i) => {
+        const h = 4.2 / BANDS;
+        const r0 = 0.55 - (0.17 * i) / BANDS;
+        const r1 = 0.55 - (0.17 * (i + 1)) / BANDS;
+        return (
+          <mesh key={i} material={i % 2 ? m.white : m.red} position={[0, 2.5 + h * (i + 0.5), 0]}>
+            <cylinderGeometry args={[r1, r0, h, 8]} />
+          </mesh>
+        );
+      })}
+      <mesh material={m.iron} position={[0, 6.8, 0]}>
+        <cylinderGeometry args={[0.62, 0.62, 0.12, 8]} />
+      </mesh>
+      <mesh material={m.glass} position={[0, 7.15, 0]}>
+        <cylinderGeometry args={[0.36, 0.36, 0.55, 8, 1, true]} />
+      </mesh>
+      <Connectome s={s} k={0.15 + 0.85 * on} pos={[0, 7.15, 0]} scale={0.12} />
+      <mesh material={m.red} position={[0, 7.65, 0]}>
+        <coneGeometry args={[0.5, 0.5, 8]} />
+      </mesh>
+      <mesh material={m.glow} position={[0, 7.15, -0.5]}>
+        <circleGeometry args={[1.4, 10]} />
+      </mesh>
+      {on > 0 && <pointLight position={[0, 7.2, 1.2]} intensity={6 * on} distance={14} color="#ffe2a0" />}
+    </group>
+  );
+};
 
 // --- his face --------------------------------------------------------------------------------------------------------
 // the grin laid onto the curve of an empty mask: a dark strip and two rows of teeth sitting on the surface
@@ -428,13 +550,11 @@ const MASK_FIELD = (() => {
 })();
 
 const Master: React.FC<{ mats: Mats; t: Things; signs: Signs; s: number; stage: 0 | 1 | 2 }> = ({ mats, t, signs, s, stage }) => {
-  // the keeper walks the yellow side of a bus to the crates, in stops and starts
-  const walk = steps(interpolate(s, [0.4, 5.4], [0, 1], clamp), 12);
   return (
     <>
-      <Shore mats={mats} s={s} edge={-4.2} reach={1.3} period={5.2} width={40} amp={0.07} />
+      <Shore mats={mats} s={s} edge={-4.2} width={40} amp={0.07} />
       <Cliffs mats={mats} />
-      <Lighthouse mats={mats} on={1} s={s} />
+      <Beacon mats={mats} s={s} />
       {/* the sun is a rim on the sea at first, a little higher three months later */}
       <mesh material={mats.sunDisc} position={[9, stage === 0 ? -1.6 : stage === 1 ? -1.0 : -0.6, -44]}>
         <circleGeometry args={[2.4, 12]} />
@@ -465,10 +585,10 @@ const Master: React.FC<{ mats: Mats; t: Things; signs: Signs; s: number; stage: 
         </>
       )}
       {stage === 1 && (
-        <group position={[-1.2 + walk * 2.6, 0, 0.2 - walk * 0.4]}>
-          <Keeper mats={mats} x={0} z={0} yaw={1.2} s={1.3} bend={0.75 + (Math.floor(s * 3) % 2) * 0.08} />
-          {/* the panel he is dragging: yellow, a blue stripe, one corner on the sand */}
-          <group position={[-0.55, 0.35, -0.1]} rotation={[0, 1.2, -0.5]}>
+        <>
+          <DressedKeeper pos={[1.9, 0, 0.3]} yaw={-0.9} scale={1.05} look={0.35} />
+          {/* the yellow side of a bus, laid down by the crates */}
+          <group position={[1.3, 0.03, 1.3]} rotation={[-Math.PI / 2, 0, 0.4]}>
             <mesh material={t.busYellow}>
               <boxGeometry args={[1.1, 0.75, 0.04]} />
             </mesh>
@@ -476,12 +596,12 @@ const Master: React.FC<{ mats: Mats; t: Things; signs: Signs; s: number; stage: 
               <boxGeometry args={[1.1, 0.08, 0.01]} />
             </mesh>
           </group>
-        </group>
+        </>
       )}
       {stage === 2 && (
         <>
           <MaskField mats={mats} items={MASK_FIELD} />
-          <Keeper mats={mats} x={1.2} z={-1.4} yaw={-0.5} s={1.3} bend={0.95} />
+          <DressedKeeper pos={[1.4, 0, -1.6]} yaw={-0.4} scale={1.05} look={0.5} />
         </>
       )}
     </>
@@ -491,9 +611,11 @@ const Master: React.FC<{ mats: Mats; t: Things; signs: Signs; s: number; stage: 
 // the lighthouse from close by: plaster over brick, one small window with its frame still in it
 const Tower: React.FC<{ t: Things; mats: Mats; s: number; on: number }> = ({ t, mats, s, on }) => (
   <group>
-    <mesh material={t.plaster} position={[0, 4.5, 0]}>
-      <cylinderGeometry args={[1.0, 1.3, 9, 10]} />
-    </mesh>
+    {Array.from({ length: 6 }).map((_, i) => (
+      <mesh key={i} material={i % 2 ? t.plaster : t.plasterRed} position={[0, 0.75 + i * 1.5, 0]}>
+        <cylinderGeometry args={[1.3 - (0.3 * (i + 1)) / 6, 1.3 - (0.3 * i) / 6, 1.5, 10]} />
+      </mesh>
+    ))}
     <group position={[0.47, 3.6, 1.1]} rotation={[0, 0.4, 0]}>
       <mesh material={t.iron}>
         <planeGeometry args={[0.32, 0.48]} />
@@ -625,7 +747,7 @@ const Scene: React.FC<{ id: VozScene; s: number; mats: Mats; cm: CastMats; t: Th
       return (
         <>
           <Shore mats={mats} s={s} edge={-1.4} reach={1.6} period={4.8} width={40} amp={0.06} />
-          <Lighthouse mats={mats} on={1} s={s} />
+          <Beacon mats={mats} s={s} />
           <group position={[0.55, 0, -0.5]} rotation={[0, -0.15, 0]}>
             <Armchair t={t} />
           </group>
@@ -683,15 +805,14 @@ const Scene: React.FC<{ id: VozScene; s: number; mats: Mats; cm: CastMats; t: Th
 
     case "exitSign": {
       // the sign lies in the wash; it still glows, and drowns for a moment under every wave
-      const under = swell(s, 3.2, 0.6) > 0.55;
       return (
         <>
-          <Shore mats={mats} s={s} edge={-1.6} reach={1.8} period={3.2} phase={0.6} grain={48} />
+          <Shore mats={mats} s={s} edge={-1.3} phase={0.6} grain={48} />
           <group position={[0, 0.03, -0.05]} rotation={[-Math.PI / 2 + 0.08, 0, 0.18]}>
             <mesh material={t.iron} position={[0, 0, -0.02]}>
               <boxGeometry args={[0.56, 0.2, 0.04]} />
             </mesh>
-            <mesh material={under || Math.floor(s * 7) % 9 === 0 ? signs.exitDim : signs.exitOn} position={[0, 0, 0.002]}>
+            <mesh material={Math.floor(s * 7) % 9 === 0 ? signs.exitDim : signs.exitOn} position={[0, 0, 0.002]}>
               <planeGeometry args={[0.5, 0.16]} />
             </mesh>
           </group>
@@ -723,13 +844,16 @@ const Scene: React.FC<{ id: VozScene; s: number; mats: Mats; cm: CastMats; t: Th
     }
 
     case "slipper": {
-      // a wave runs over it, nudges it round, and leaves it a little further up the beach
-      const nudge = steps(interpolate(s, [1.0, 1.6], [0, 1], clamp), 4);
+      // one slipper afloat, turning slowly on the swell
+      const y = seaY(0, 0, s, 0.05);
       return (
         <>
-          <Shore mats={mats} s={s} edge={-1.2} reach={1.35} period={4.0} phase={2.8} grain={48} />
-          <group position={[0.02, 0, -0.55 + nudge * 0.12]} rotation={[0, 0.4 + nudge * 0.5, 0]}>
-            <Slipper t={t} />
+          <Sky look={DAWN} />
+          <Sea mats={mats} s={s} from={-45} to={6} amp={0.05} />
+          <group position={[0, y + 0.0, -0.4]} rotation={[seaY(0, 0.2, s, 0.05) - seaY(0, -0.2, s, 0.05), 0.4 + s * 0.08, 0]}>
+            <group scale={1.5}>
+              <Slipper t={t} />
+            </group>
           </group>
         </>
       );
@@ -772,7 +896,7 @@ const Scene: React.FC<{ id: VozScene; s: number; mats: Mats; cm: CastMats; t: Th
           <Sand look={DAWN} size={20} rep={10} />
           <pointLight position={[0, 0.3, 0.2]} intensity={3} distance={4} color="#c8b0d8" />
           {/* on «в голове» the keeper straightens and looks up: for a moment the sky is a ceiling */}
-          <Keeper mats={mats} x={0} z={-1.3} yaw={0} s={1.7} bend={interpolate(s, [0.6, 1.4], [0.62, 0.15], clamp)} />
+          <DressedKeeper pos={[0, 0, -1.3]} yaw={0} scale={1.25} look={interpolate(steps(interpolate(s, [0.6, 1.4], [0, 1], clamp), 3), [0, 1], [0.6, -0.5])} />
           <CeilingSky k={steps(interpolate(s, [0.1, 0.7, 1.4, 2.1], [0, 0.85, 0.85, 0], clamp), 5)} />
         </>
       );
@@ -780,17 +904,10 @@ const Scene: React.FC<{ id: VozScene; s: number; mats: Mats; cm: CastMats; t: Th
     case "keeperBack":
       return (
         <>
-          <Shore mats={mats} s={s} edge={-4.5} reach={0.8} period={5} width={60} amp={0.08} />
-          <Lighthouse mats={mats} on={1} s={s} />
-          {/* he looks down at the face, then up the beach to the lighthouse, in three jerks */}
-          <Keeper
-            mats={mats}
-            x={0.15}
-            z={0.9}
-            yaw={interpolate(steps(interpolate(s, [0.5, 1.6], [0, 1], clamp), 3), [0, 1], [-2.0, -2.85])}
-            s={1.5}
-            bend={interpolate(s, [0.5, 1.6], [0.9, 0.15], clamp)}
-          />
+          <Shore mats={mats} s={s} edge={-4.5} width={60} amp={0.08} />
+          <Beacon mats={mats} s={s} />
+          {/* he stands over the face; once, he turns his head to the lighthouse */}
+          <DressedKeeper pos={[0.15, 0, 0.9]} yaw={-2.2} scale={1.1} look={s < 1.0 ? 0.55 : 0.05} turn={s < 1.0 ? 0 : -0.55} />
           <VozMask mats={mats} cm={cm} pos={[-0.3, 0.03, 0.4]} rot={[-Math.PI / 2, 0, -0.6]} scale={0.3} eyes lift={0.25} />
           <Around mats={mats} n={6} r={1.6} at={[-0.3, 0.4]} />
         </>
