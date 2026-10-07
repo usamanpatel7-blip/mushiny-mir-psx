@@ -29,9 +29,10 @@ const Subtitles: React.FC = () => {
   const full = parts.map((p) => p.text).join("");
   const shown = parts.map((p) => p.text.slice(0, Math.round(interpolate(t, [p.from, p.to], [0, 1], clamp) * p.text.length))).join("");
   return (
-    <div style={subtitleStyle}>
+    // larger than the shared style, and across the whole width so the bigger lines still fit
+    <div style={{ ...subtitleStyle, left: 60, right: 60, bottom: 380 }}>
       {/* the whole line is laid out from the start (rest invisible) so nothing jumps while typing */}
-      <div style={{ fontSize: 30, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 42, lineHeight: 1.55 }}>
         {shown}
         <span style={{ color: "transparent", textShadow: "none" }}>{full.slice(shown.length)}</span>
       </div>
