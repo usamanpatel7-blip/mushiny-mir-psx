@@ -198,6 +198,7 @@ const Sand: React.FC<{ look: Look; size?: number; rep?: number; z?: number }> = 
 };
 
 // the sea: a flat-shaded grid whose vertices bob in steps
+const SEA_LEVEL = 0.07;
 const Sea: React.FC<{ mats: Mats; s: number; from: number; to: number; width?: number; opacity?: number; amp?: number }> = ({
   mats,
   s,
@@ -227,7 +228,8 @@ const Sea: React.FC<{ mats: Mats; s: number; from: number; to: number; width?: n
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i);
       const z = p.getZ(i);
-      p.setY(i, amp * (Math.sin(x * 0.9 + s * 1.7 + z * 0.4) + 0.6 * Math.sin(z * 1.3 - s * 2.1)));
+      // a long, slow swell that always stays above the sand (no puddles of beach showing through)
+      p.setY(i, SEA_LEVEL + amp * (0.6 * Math.sin(x * 0.35 + s * 0.7 + z * 0.2) + 0.4 * Math.sin(z * 0.6 - s * 0.9)));
     }
     p.needsUpdate = true;
     geo.computeVertexNormals();
@@ -585,7 +587,7 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
       {id === "seaFaces" && (
         <>
           <Sky look={look} />
-          <Sea mats={mats} s={s} from={-45} to={6} opacity={0.55} amp={0.06} />
+          <Sea mats={mats} s={s} from={-45} to={6} opacity={0.55} amp={0.03} />
           {/* rows of faces just under the surface, drifting to shore */}
           {/* every row is another patch: the older ones arrive with fewer polygons */}
           {Array.from({ length: 34 }).map((_, i) => {
@@ -623,13 +625,13 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
             <mesh material={mats.wet} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, -1.9]}>
               <planeGeometry args={[30, 2.8]} />
             </mesh>
-            <Sea mats={mats} s={s} from={-45} to={-3.2} amp={0.05} />
+            <Sea mats={mats} s={s} from={-45} to={-3.2} amp={0.03} />
             {/* the sheet of water over the sand up to the foam line */}
-            <mesh material={mats.sea} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, (foamZ - 3.2) / 2]} scale={[1, Math.max(0.01, foamZ + 3.2), 1]}>
+            <mesh material={mats.sea} rotation={[-Math.PI / 2, 0, 0]} position={[0, SEA_LEVEL - 0.01, (foamZ - 3.2) / 2]} scale={[1, Math.max(0.01, foamZ + 3.2), 1]}>
               <planeGeometry args={[30, 1]} />
             </mesh>
             {Array.from({ length: 22 }).map((_, i) => (
-              <mesh key={i} material={mats.foam} position={[-7 + i * 0.68, 0.035, foamZ + (hash(i) - 0.5) * 0.18]} rotation={[-Math.PI / 2, 0, 0]}>
+              <mesh key={i} material={mats.foam} position={[-7 + i * 0.68, SEA_LEVEL + 0.01, foamZ + (hash(i) - 0.5) * 0.18]} rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[0.72, 0.16 + hash(i + 3) * 0.12]} />
               </mesh>
             ))}
@@ -655,8 +657,8 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
         <>
           <Sky look={look} />
           <Sand look={look} size={80} rep={26} />
-          <Sea mats={mats} s={s} from={-45} to={-12.6} amp={0.08} />
-          <mesh material={mats.foam} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -12.6]}>
+          <Sea mats={mats} s={s} from={-45} to={-12.6} amp={0.03} />
+          <mesh material={mats.foam} rotation={[-Math.PI / 2, 0, 0]} position={[0, SEA_LEVEL + 0.03, -12.6]}>
             <planeGeometry args={[80, 0.14]} />
           </mesh>
           <Cliffs mats={mats} />
@@ -723,8 +725,8 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
         <>
           <Sky look={look} />
           <Sand look={look} size={60} rep={20} />
-          <Sea mats={mats} s={s} from={-45} to={-5} amp={0.07} />
-          <mesh material={mats.foam} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -5]}>
+          <Sea mats={mats} s={s} from={-45} to={-5} amp={0.03} />
+          <mesh material={mats.foam} rotation={[-Math.PI / 2, 0, 0]} position={[0, SEA_LEVEL + 0.03, -5]}>
             <planeGeometry args={[80, 0.12]} />
           </mesh>
           {/* the rim of the sun: it rises a little while we watch */}
@@ -832,7 +834,7 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
       {id === "lighthouse" && (
         <>
           <Sky look={look} />
-          <Sea mats={mats} s={s} from={-45} to={8} amp={0.1} />
+          <Sea mats={mats} s={s} from={-45} to={8} amp={0.03} />
           <Lighthouse mats={mats} on={s > 0.3 ? 1 : 0} s={s} />
         </>
       )}
@@ -840,7 +842,7 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
       {id === "lighthouseEnd" && (
         <>
           <Sky look={look} />
-          <Sea mats={mats} s={s} from={-45} to={8} amp={0.1} />
+          <Sea mats={mats} s={s} from={-45} to={8} amp={0.03} />
           {/* it blinks once, slowly, like an eye */}
           <Lighthouse mats={mats} on={interpolate(s, [1.6, 1.9, 2.2, 2.6], [1, 0, 0, 1], clamp)} s={s} />
         </>
@@ -850,8 +852,8 @@ const FacesWorld: React.FC<{ id: FacesScene }> = ({ id }) => {
         <>
           <Sky look={look} />
           <Sand look={look} size={80} rep={26} />
-          <Sea mats={mats} s={s} from={-45} to={-12.6} amp={0.08} />
-          <mesh material={mats.foam} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -12.6]}>
+          <Sea mats={mats} s={s} from={-45} to={-12.6} amp={0.03} />
+          <mesh material={mats.foam} rotation={[-Math.PI / 2, 0, 0]} position={[0, SEA_LEVEL + 0.03, -12.6]}>
             <planeGeometry args={[80, 0.14]} />
           </mesh>
           <Cliffs mats={mats} />
