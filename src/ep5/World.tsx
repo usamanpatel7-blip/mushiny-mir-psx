@@ -176,9 +176,12 @@ const Shore: React.FC<{ mats: Mats; s: number; edge: number; reach?: number; per
       <mesh material={mats.wet} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, edge + 0.35]}>
         <planeGeometry args={[width, 0.8]} />
       </mesh>
-      <Sea mats={mats} s={s} from={-45} to={z} amp={amp} />
+      {/* the troughs must stay above the sand, or the sand shows through the sea like puddles */}
+      <group position={[0, amp * 1.6 + 0.01, 0]}>
+        <Sea mats={mats} s={s} from={-45} to={z} amp={amp} />
+      </group>
       {Array.from({ length: 24 }).map((_, i) => (
-        <mesh key={i} material={mats.foam} position={[-width / 4 + i * (width / 2 / 24), 0.03, z + (hash(i) - 0.5) * 0.08]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh key={i} material={mats.foam} position={[-width / 4 + i * (width / 2 / 24), amp * 1.6 + 0.03, z + (hash(i) - 0.5) * 0.08]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[width / 2 / 24 + 0.05, 0.08 + hash(i + 3) * 0.06]} />
         </mesh>
       ))}
