@@ -39,6 +39,12 @@ CAMS = {
     "kebab-eyes": ("src-kebab.jpg", 0.63, 0.31, 4.2),
     "soslan-wide": ("src-soslan.jpg", 0.57, 0.5, 1.0),
     "soslan-eye": ("src-soslan.jpg", 0.455, 0.34, 3.4),
+    "faces-crates-wide": ("src-faces-crates.jpg", 0.33, 0.5, 1.0),
+    "faces-crates-box": ("src-faces-crates.jpg", 0.42, 0.68, 1.9),
+    "faces-crates-far": ("src-faces-crates.jpg", 0.7, 0.45, 1.9),
+    "faces-suit-wide": ("src-faces-suit.jpg", 0.42, 0.5, 1.0),
+    "faces-suit-face": ("src-faces-suit.jpg", 0.6, 0.56, 2.2),
+    "faces-suit-light": ("src-faces-suit.jpg", 0.22, 0.2, 2.6),
 }
 
 

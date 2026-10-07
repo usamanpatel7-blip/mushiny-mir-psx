@@ -2,6 +2,7 @@ import "./index.css";
 import { KriptanComposition } from "./Composition";
 import { KebabComposition } from "./ep2/Episode";
 import { SoslanComposition } from "./ep3/Episode";
+import { FacesComposition } from "./ep4/Episode";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -9,6 +10,7 @@ export const RemotionRoot: React.FC = () => {
       <KriptanComposition />
       <KebabComposition />
       <SoslanComposition />
+      <FacesComposition />
     </>
   );
 };
