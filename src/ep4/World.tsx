@@ -17,8 +17,8 @@ const hash = (i: number) => {
 };
 
 // two looks: reel 1 is a purple dawn, reel 2 an overcast grey morning
-type Look = { skyTop: string; skyMid: string; skyLow: string; sea: string; sand: string; sandDark: string; fog: string; sun: string; hemi: [string, string] };
-const DAWN: Look = {
+export type Look = { skyTop: string; skyMid: string; skyLow: string; sea: string; sand: string; sandDark: string; fog: string; sun: string; hemi: [string, string] };
+export const DAWN: Look = {
   skyTop: "#3e3a62",
   skyMid: "#8a5c78",
   skyLow: "#f0a060",
@@ -29,7 +29,7 @@ const DAWN: Look = {
   sun: "#ffd890",
   hemi: ["#b4a0c8", "#4a3c3a"],
 };
-const GREY: Look = {
+export const GREY: Look = {
   skyTop: "#4a5068",
   skyMid: "#6e7488",
   skyLow: "#9aa0ae",
@@ -81,12 +81,12 @@ const CAMS: Record<FacesScene, Cam> = {
 // --- shared geometry ----------------------------------------------------------------------------------------
 // a mask in local space: the face looks along +z, forehead towards +y; 1.5 wide, 2 tall before scaling
 const MASK_DEPTH = 0.45;
-const surfaceZ = (x: number, y: number) => MASK_DEPTH * Math.sqrt(Math.max(0, 1 - (x / 0.75) ** 2 - y ** 2));
-const EYES: [number, number][] = [
+export const surfaceZ = (x: number, y: number) => MASK_DEPTH * Math.sqrt(Math.max(0, 1 - (x / 0.75) ** 2 - y ** 2));
+export const EYES: [number, number][] = [
   [-0.27, 0.2],
   [0.27, 0.2],
 ];
-const MOUTH: [number, number] = [0, -0.48];
+export const MOUTH: [number, number] = [0, -0.48];
 
 const maskGeos = (lod: number) => {
   const shell = lod === 0 ? new THREE.SphereGeometry(1, 5, 4, 0, Math.PI, 0, Math.PI) : new THREE.SphereGeometry(1, 9, 7, 0, Math.PI, 0, Math.PI);
@@ -108,7 +108,7 @@ const maskGeos = (lod: number) => {
 const GEOS: ReturnType<typeof maskGeos>[] = [];
 const geos = (lod = 1) => (GEOS[lod] ??= maskGeos(lod));
 
-const useMats = (look: Look) =>
+export const useMats = (look: Look) =>
   useMemo(
     () => ({
       mask: lambert({ color: "#e8e2d6", side: THREE.DoubleSide }),
@@ -139,7 +139,7 @@ const useMats = (look: Look) =>
     }),
     [look],
   );
-type Mats = ReturnType<typeof useMats>;
+export type Mats = ReturnType<typeof useMats>;
 
 // --- textures -------------------------------------------------------------------------------------------------
 const sandTexture = (look: Look) =>
@@ -173,7 +173,7 @@ const skyTexture = (look: Look) =>
   });
 
 // the warm band of the gradient sits right on the horizon
-const Sky: React.FC<{ look: Look; z?: number; y?: number }> = ({ look, z = -46, y = 24 }) => {
+export const Sky: React.FC<{ look: Look; z?: number; y?: number }> = ({ look, z = -46, y = 24 }) => {
   const mat = useMemo(() => new THREE.MeshBasicMaterial({ map: skyTexture(look), fog: false }), [look]);
   return (
     <mesh material={mat} position={[0, y, z]}>
@@ -182,7 +182,7 @@ const Sky: React.FC<{ look: Look; z?: number; y?: number }> = ({ look, z = -46, 
   );
 };
 
-const Sand: React.FC<{ look: Look; size?: number; rep?: number; z?: number }> = ({ look, size = 60, rep = 18, z = 0 }) => {
+export const Sand: React.FC<{ look: Look; size?: number; rep?: number; z?: number }> = ({ look, size = 60, rep = 18, z = 0 }) => {
   const mat = useMemo(() => {
     const t = sandTexture(look);
     t.wrapS = THREE.RepeatWrapping;
@@ -198,7 +198,7 @@ const Sand: React.FC<{ look: Look; size?: number; rep?: number; z?: number }> = 
 };
 
 // the sea: a flat-shaded grid whose vertices bob in steps
-const Sea: React.FC<{ mats: Mats; s: number; from: number; to: number; width?: number; opacity?: number; amp?: number }> = ({
+export const Sea: React.FC<{ mats: Mats; s: number; from: number; to: number; width?: number; opacity?: number; amp?: number }> = ({
   mats,
   s,
   from,
@@ -255,7 +255,7 @@ type MaskProps = {
   children?: React.ReactNode;
 };
 
-const Mask: React.FC<MaskProps> = ({
+export const Mask: React.FC<MaskProps> = ({
   mats,
   pos,
   rot,
@@ -341,7 +341,7 @@ const Mask: React.FC<MaskProps> = ({
 };
 
 // many masks on one beach: two instanced meshes (shell + eye holes)
-const MaskField: React.FC<{ mats: Mats; items: { x: number; z: number; yaw: number; s: number }[] }> = ({ mats, items }) => {
+export const MaskField: React.FC<{ mats: Mats; items: { x: number; z: number; yaw: number; s: number }[] }> = ({ mats, items }) => {
   const g = geos();
   const shellRef = useRef<THREE.InstancedMesh>(null);
   const holeRef = useRef<THREE.InstancedMesh>(null);
@@ -366,7 +366,7 @@ const MaskField: React.FC<{ mats: Mats; items: { x: number; z: number; yaw: numb
 };
 
 // a hunched keeper far away: hood, red eyes, folded wings
-const Keeper: React.FC<{ mats: Mats; x: number; z: number; yaw: number; s: number; bend: number }> = ({ mats, x, z, yaw, s, bend }) => (
+export const Keeper: React.FC<{ mats: Mats; x: number; z: number; yaw: number; s: number; bend: number }> = ({ mats, x, z, yaw, s, bend }) => (
   <group position={[x, 0, z]} rotation={[0, yaw, 0]} scale={s}>
     <mesh material={mats.keeper} position={[0, 0.25, 0]}>
       <cylinderGeometry args={[0.05, 0.07, 0.5, 5]} />
@@ -392,7 +392,7 @@ const Keeper: React.FC<{ mats: Mats; x: number; z: number; yaw: number; s: numbe
   </group>
 );
 
-const Cliffs: React.FC<{ mats: Mats }> = ({ mats }) => (
+export const Cliffs: React.FC<{ mats: Mats }> = ({ mats }) => (
   <>
     {[
       [-11, -10, 5, 4.5],
@@ -409,7 +409,7 @@ const Cliffs: React.FC<{ mats: Mats }> = ({ mats }) => (
 );
 
 // numbered crates in the stills; in 3D the crate stays bare
-const Crate: React.FC<{ mats: Mats; w: number; d: number; h: number }> = ({ mats, w, d, h }) => {
+export const Crate: React.FC<{ mats: Mats; w: number; d: number; h: number }> = ({ mats, w, d, h }) => {
   const t = 0.07;
   return (
     <group>
@@ -437,7 +437,7 @@ const Crate: React.FC<{ mats: Mats; w: number; d: number; h: number }> = ({ mats
 };
 
 // a keeper's foreleg: three dark segments, a hooked tip and a few bristles
-const Limb: React.FC<{ mats: Mats; reach: number; shake: number }> = ({ mats, reach, shake }) => (
+export const Limb: React.FC<{ mats: Mats; reach: number; shake: number }> = ({ mats, reach, shake }) => (
   <group position={[0.05 + shake, 0.42, 1.6 - reach * 1.25]} rotation={[0, 0.12, 0]}>
     <mesh material={mats.flyDark} position={[0, 0.08, 0.55]} rotation={[-0.25, 0, 0]}>
       <boxGeometry args={[0.07, 0.07, 0.7]} />
@@ -456,7 +456,7 @@ const Limb: React.FC<{ mats: Mats; reach: number; shake: number }> = ({ mats, re
   </group>
 );
 
-const Lighthouse: React.FC<{ mats: Mats; on: number; s: number }> = ({ mats, on, s }) => {
+export const Lighthouse: React.FC<{ mats: Mats; on: number; s: number }> = ({ mats, on, s }) => {
   const glass = useMemo(() => basic({ color: "#2a2c34", transparent: true, opacity: 0.55, depthWrite: false }), []);
   const glow = useMemo(() => basic({ color: "#ffe9a0", transparent: true, opacity: 0.35, depthWrite: false }), []);
   glow.opacity = 0.35 * on;
@@ -489,7 +489,7 @@ const Lighthouse: React.FC<{ mats: Mats; on: number; s: number }> = ({ mats, on,
 };
 
 // the god of this world: a drosophila connectome, threads of colour that pulse
-const Connectome: React.FC<{ s: number; k: number; pos: [number, number, number]; scale: number }> = ({ s, k, pos, scale }) => {
+export const Connectome: React.FC<{ s: number; k: number; pos: [number, number, number]; scale: number }> = ({ s, k, pos, scale }) => {
   const { lines, base, phase, step } = useMemo(() => {
     let seed = 7;
     const rnd = () => {

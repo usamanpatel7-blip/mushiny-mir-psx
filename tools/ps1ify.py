@@ -4,6 +4,7 @@ Crop a 9:16 "fixed camera" window, downscale to 270x480, quantize to
 15-bit colour with a 4x4 ordered (Bayer) dither, upscale x4 nearest-neighbour.
 """
 import os
+import sys
 import numpy as np
 from PIL import Image
 
@@ -45,6 +46,8 @@ CAMS = {
     "faces-suit-wide": ("src-faces-suit.jpg", 0.42, 0.5, 1.0),
     "faces-suit-face": ("src-faces-suit.jpg", 0.6, 0.56, 2.2),
     "faces-suit-light": ("src-faces-suit.jpg", 0.22, 0.2, 2.6),
+    "voz-office": ("src-voz-office.jpg", 0.5, 0.5, 1.0),
+    "voz-backrooms": ("src-voz-backrooms.jpg", 0.5, 0.5, 1.0),
 }
 
 
@@ -67,7 +70,10 @@ def ps1(img):
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
+    only = sys.argv[1:]
     for name, (src, cx, cy, zoom) in CAMS.items():
+        if only and name not in only:
+            continue
         img = Image.open(os.path.join(SRC, src))
         ps1(crop(img, cx, cy, zoom)).save(os.path.join(OUT, f"{name}.png"), optimize=True)
         print(name)
