@@ -1,23 +1,27 @@
 import type { HubEpisode, HubShot } from "./Episode";
 
 // «Великое Взвешивание». Voice: fish.audio take, times from its word timestamps.
-const VERT: [number, number] = [941, 1672]; // scenes/ep3-1: empty scale, queue of middles
-const WIDE: [number, number] = [1671, 941]; // scenes/ep3-1-wide: Timosha already on the pan
+const VERT: [number, number] = [941, 1672]; // scenes/ep3-1: empty scale, queue; ep3-2: Timosha vs achievements
+const BAKE: [number, number] = [1122, 1402]; // scenes/ep3-bake: expectations being baked in the office kitchen
 const SHEET: [number, number] = [1536, 1024];
 
 const shots: HubShot[] = [
   // «Раз в полгода Снежана Вайбовна взвешивает мидлов»
   { img: "scenes/ep3-1", size: VERT, from: 0, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 470, cy: 800, h: 1450 } },
-  // «На одну чашу кладут ачивки, на другую — ожидания»
-  { img: "scenes/ep3-1", size: VERT, from: 5.0, a: { cx: 440, cy: 760, h: 940 }, b: { cx: 500, cy: 740, h: 880 } },
-  // «Ожидания всегда тяжелее: их пекут заранее»
-  { img: "scenes/ep3-1", size: VERT, from: 9.75, a: { cx: 150, cy: 440, h: 760 }, b: { cx: 150, cy: 360, h: 600 } },
+  // «На одну чашу кладут ачивки,» — the pan full of cups and gems
+  { img: "scenes/ep3-2", size: VERT, from: 5.0, a: { cx: 760, cy: 860, h: 780 }, b: { cx: 760, cy: 880, h: 640 } },
+  // «на другую — ожидания» — the dough
+  { img: "scenes/ep3-bake", size: BAKE, from: 7.5, a: { cx: 250, cy: 700, h: 760 }, b: { cx: 280, cy: 680, h: 680 } },
+  // «Ожидания всегда тяжелее:» — the office kitchen at work
+  { img: "scenes/ep3-bake", size: BAKE, from: 9.75, a: { cx: 380, cy: 701, h: 1402 }, b: { cx: 720, cy: 701, h: 1402 } },
+  // «их пекут заранее» — the tray comes out of the oven
+  { img: "scenes/ep3-bake", size: BAKE, from: 12.05, a: { cx: 900, cy: 880, h: 820 }, b: { cx: 930, cy: 900, h: 680 } },
   // «Тимоша положил на весы закрытые тикетни»
-  { img: "scenes/ep3-1-wide", size: WIDE, from: 14.0, a: { cx: 610, cy: 470, h: 941 }, b: { cx: 610, cy: 420, h: 800 } },
+  { img: "scenes/ep3-2", size: VERT, from: 14.0, a: { cx: 190, cy: 660, h: 940 }, b: { cx: 180, cy: 600, h: 780 } },
   // «ночные инциденты и свою спину»
   { img: "chars/timosha", size: SHEET, from: 17.65, a: { cx: 1080, cy: 560, h: 1000 }, b: { cx: 1060, cy: 480, h: 800 } },
   // «Растёшь, — сказала Снежана…» — from him on the pan across to her
-  { img: "scenes/ep3-1-wide", size: WIDE, from: 20.85, a: { cx: 610, cy: 470, h: 941 }, b: { cx: 330, cy: 470, h: 941 } },
+  { img: "scenes/ep3-2", size: VERT, from: 20.85, a: { cx: 280, cy: 660, h: 1100 }, b: { cx: 640, cy: 640, h: 1100 } },
   // «…но не туда»
   { img: "chars/snezhana", size: SHEET, from: 23.35, a: { cx: 1140, cy: 540, h: 1000 }, b: { cx: 1140, cy: 470, h: 780 } },
 ];
