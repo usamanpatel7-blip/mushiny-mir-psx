@@ -1,7 +1,7 @@
 import type { HubEpisode, HubShot } from "./Episode";
 
 // «Прополка». Two takes joined, the second starts at B. Placeholder cut from character sheets
-// until the scenes arrive: Snezhana watering the open space, wet happy Timosha, Timosha under three mugs.
+// until the scenes arrive: Snezhana watering the open space, Timosha under three mugs.
 const B = 12.58;
 const SHEET: [number, number] = [1536, 1024];
 const RAIN: [number, number] = [940, 1672];
@@ -19,7 +19,7 @@ const shots: HubShot[] = [
   // «и говорят, что мы семья, просто семья теперь поменьше.»
   { img: "chars/snezhana", size: SHEET, from: B + 4.65, a: { cx: 1140, cy: 560, h: 1024 }, b: { cx: 1140, cy: 470, h: 760 } },
   // «Тимошу полили. Он стоит мокрый и счастливый.»
-  { img: "chars/timosha", size: SHEET, from: B + 9.75, a: { cx: 300, cy: 512, h: 1024 }, b: { cx: 300, cy: 400, h: 760 } },
+  { img: "scenes/ep6-wet", size: RAIN, from: B + 9.75, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 450, cy: 600, h: 1100 } },
   // «Ему отдали задачи троих ушедших и их кружки.»
   { img: "chars/timosha", size: SHEET, from: B + 14.4, a: { cx: 1080, cy: 560, h: 1000 }, b: { cx: 1050, cy: 470, h: 760 } },
 ];

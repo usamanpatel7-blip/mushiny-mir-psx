@@ -9,6 +9,7 @@ import { weighing } from "./hub/ep3";
 import { greenEye } from "./hub/ep4";
 import { pivot } from "./hub/ep5";
 import { weeding } from "./hub/ep6";
+import { testTask } from "./hub/ep8";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -22,6 +23,7 @@ export const RemotionRoot: React.FC = () => {
       {hubComposition(greenEye)}
       {hubComposition(pivot)}
       {hubComposition(weeding)}
+      {hubComposition(testTask)}
     </>
   );
 };
