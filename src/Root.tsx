@@ -6,6 +6,7 @@ import { FacesComposition } from "./ep4/Episode";
 import { VozComposition } from "./ep5/Episode";
 import { hubComposition } from "./hub/Episode";
 import { weighing } from "./hub/ep3";
+import { greenEye } from "./hub/ep4";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -16,6 +17,7 @@ export const RemotionRoot: React.FC = () => {
       <FacesComposition />
       <VozComposition />
       {hubComposition(weighing)}
+      {hubComposition(greenEye)}
     </>
   );
 };
