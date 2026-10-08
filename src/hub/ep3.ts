@@ -4,6 +4,8 @@ import type { HubEpisode, HubShot } from "./Episode";
 const VERT: [number, number] = [941, 1672]; // scenes/ep3-1: empty scale, queue; ep3-2: Timosha vs achievements
 const BAKE: [number, number] = [1122, 1402]; // scenes/ep3-bake: expectations being baked in the office kitchen
 const SHEET: [number, number] = [1536, 1024];
+// the Thursday tail is a second take, glued on after «но не туда»
+const B = 25.03;
 
 const shots: HubShot[] = [
   // «Раз в полгода Снежана Вайбовна взвешивает мидлов»
@@ -24,12 +26,22 @@ const shots: HubShot[] = [
   { img: "scenes/ep3-2", size: VERT, from: 20.85, a: { cx: 280, cy: 660, h: 1100 }, b: { cx: 640, cy: 640, h: 1100 } },
   // «…но не туда»
   { img: "chars/snezhana", size: SHEET, from: 23.35, a: { cx: 1140, cy: 540, h: 1000 }, b: { cx: 1140, cy: 470, h: 780 } },
+  // «Зато по четвергам у нас сырки.» — scenes/ep3-3: the glass case
+  { img: "scenes/ep3-3", size: VERT, from: B - 0.2, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 500, cy: 900, h: 1400 } },
+  // «Если перевести сырок в годовой доход,»
+  { img: "scenes/ep3-3", size: VERT, from: B + 2.8, a: { cx: 560, cy: 1250, h: 760 }, b: { cx: 560, cy: 1260, h: 640 } },
+  // «то это почти повышение.»
+  { img: "scenes/ep3-3", size: VERT, from: B + 6.1, a: { cx: 680, cy: 470, h: 860 }, b: { cx: 680, cy: 420, h: 680 } },
+  // «Но два взять нельзя,»
+  { img: "scenes/ep3-3", size: VERT, from: B + 8.4, a: { cx: 200, cy: 420, h: 820 }, b: { cx: 190, cy: 380, h: 680 } },
+  // «иначе нарушится грейдовая сетка.»
+  { img: "scenes/ep3-3", size: VERT, from: B + 10.35, a: { cx: 520, cy: 760, h: 1100 }, b: { cx: 470, cy: 836, h: 1672 } },
 ];
 
 export const weighing: HubEpisode = {
   id: "Weighing",
-  voice: "hub/ep3/voice.mp3",
-  end: 26,
+  voice: "hub/ep3/voice-full.mp3",
+  end: 39.6,
   shots,
   captions: [
     { text: "Раз в полгода", at: 0 },
@@ -47,5 +59,13 @@ export const weighing: HubEpisode = {
     { text: "«Растёшь, —", at: 20.98 },
     { text: "сказала Снежана, —", at: 21.84 },
     { text: "но не туда»", at: 23.46 },
+    { text: "Зато по четвергам", at: B },
+    { text: "у нас сырки", at: B + 1.64 },
+    { text: "Если перевести сырок", at: B + 2.96 },
+    { text: "в годовой доход,", at: B + 4.68 },
+    { text: "то это почти повышение", at: B + 6.28 },
+    { text: "Но два взять нельзя —", at: B + 8.56 },
+    { text: "иначе нарушится", at: B + 10.48 },
+    { text: "грейдовая сетка", at: B + 11.6 },
   ],
 };
