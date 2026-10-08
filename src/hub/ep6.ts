@@ -1,7 +1,7 @@
 import type { HubEpisode, HubShot } from "./Episode";
 
 // «Прополка». Two takes joined, the second starts at B. Placeholder cut from character sheets
-// until the scenes arrive: Snezhana watering the open space, Timosha under three mugs.
+//.
 const B = 12.58;
 const SHEET: [number, number] = [1536, 1024];
 const RAIN: [number, number] = [940, 1672];
@@ -11,9 +11,9 @@ const shots: HubShot[] = [
   // «Весной в Болотном Хабе начинается прополка.»
   { img: "scenes/ep8-3", size: RAIN, from: 0, a: { cx: 300, cy: 600, h: 1100 }, b: { cx: 320, cy: 500, h: 900 } },
   // «Снежана Вайбовна ходит по опенспейсу с лейкой.»
-  { img: "chars/snezhana", size: SHEET, from: 4.7, a: { cx: 330, cy: 512, h: 1024 }, b: { cx: 340, cy: 540, h: 900 } },
+  { img: "scenes/ep6-water", size: RAIN, from: 4.7, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 520, cy: 760, h: 1350 } },
   // «Кого польёт — тот остаётся.»
-  { img: "chars/snezhana", size: SHEET, from: 9.25, a: { cx: 420, cy: 640, h: 640 }, b: { cx: 420, cy: 640, h: 520 } },
+  { img: "scenes/ep6-water", size: RAIN, from: 9.25, a: { cx: 260, cy: 760, h: 900 }, b: { cx: 240, cy: 780, h: 760 } },
   // «Кого не польёт, того зовут на синкопу ненадолго»
   { img: "scenes/ep3-1-wide", size: WIDE, from: B - 0.1, a: { cx: 1400, cy: 470, h: 941 }, b: { cx: 1250, cy: 470, h: 941 } },
   // «и говорят, что мы семья, просто семья теперь поменьше.»
@@ -21,7 +21,7 @@ const shots: HubShot[] = [
   // «Тимошу полили. Он стоит мокрый и счастливый.»
   { img: "scenes/ep6-wet", size: RAIN, from: B + 9.75, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 450, cy: 600, h: 1100 } },
   // «Ему отдали задачи троих ушедших и их кружки.»
-  { img: "chars/timosha", size: SHEET, from: B + 14.4, a: { cx: 1080, cy: 560, h: 1000 }, b: { cx: 1050, cy: 470, h: 760 } },
+  { img: "scenes/ep6-mugs", size: RAIN, from: B + 14.4, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 560, cy: 1000, h: 1100 } },
 ];
 
 export const weeding: HubEpisode = {
