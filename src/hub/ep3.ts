@@ -42,6 +42,7 @@ export const weighing: HubEpisode = {
   id: "Weighing",
   voice: "hub/ep3/voice-full.mp3",
   end: 39.6,
+  musicFrom: 0,
   shots,
   captions: [
     { text: "Раз в полгода", at: 0 },

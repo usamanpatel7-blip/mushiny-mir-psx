@@ -14,7 +14,12 @@ loadFont({ family: "Inter", url: staticFile("fonts/Inter-ExtraBold.otf"), weight
 export type Cam = { cx: number; cy: number; h: number };
 export type HubShot = { img: string; size: [number, number]; from: number; a: Cam; b: Cam };
 export type Caption = { text: string; at: number };
-export type HubEpisode = { id: string; voice: string; end: number; shots: HubShot[]; captions: Caption[] };
+// musicFrom: where in the shared Focus Flow bed this episode starts, so the series doesn't open the same way every time
+export type HubEpisode = { id: string; voice: string; end: number; musicFrom: number; shots: HubShot[]; captions: Caption[] };
+
+const MUSIC = "hub/music-focus-flow.mp3";
+// the bed sits ~16 dB under the narration and breathes in and out at the edges
+const MUSIC_VOLUME = 0.18;
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const ease = (p: number) => p * p * (3 - 2 * p);
@@ -66,6 +71,11 @@ export const HubVideo: React.FC<{ ep: HubEpisode }> = ({ ep }) => {
       <Still shot={ep.shots[i]} t={t} until={ep.shots[i + 1]?.from ?? ep.end} />
       {c && <CaptionView text={c.text} />}
       <Audio src={staticFile(ep.voice)} />
+      <Audio
+        src={staticFile(MUSIC)}
+        startFrom={Math.round(ep.musicFrom * FPS)}
+        volume={(f) => MUSIC_VOLUME * interpolate(f / FPS, [0, 0.6, ep.end - 1.4, ep.end], [0, 1, 1, 0], clamp)}
+      />
     </AbsoluteFill>
   );
 };

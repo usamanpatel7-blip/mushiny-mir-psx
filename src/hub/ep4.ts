@@ -32,6 +32,7 @@ export const greenEye: HubEpisode = {
   id: "GreenEye",
   voice: "hub/ep4/voice.mp3",
   end: 30.8,
+  musicFrom: 48,
   shots,
   captions: [
     { text: "На удалёнке", at: 0 },
