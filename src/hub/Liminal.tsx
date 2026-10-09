@@ -15,7 +15,7 @@ type Shot =
 
 const SHOTS: Shot[] = [
   { kind: "clip", src: "a", from: 7.6, len: 1.4, text: "??" },
-  { kind: "clip", src: "a", from: 0.3, len: 1.3, cx: 0.4, text: "эй" },
+  { kind: "clip", src: "a", from: 0.3, len: 1.3, cx: 0.62, text: "эй" },
   { kind: "clip", src: "a", from: 2.2, len: 1.3, text: "ты ещё тут?" },
   { kind: "still", img: "scenes/ep0-weekend", len: 1.2, text: "суббота!!" },
   { kind: "clip", src: "a", from: 3.6, len: 1.3, text: "заходи!!" },
