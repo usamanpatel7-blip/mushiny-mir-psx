@@ -1,50 +1,112 @@
 import type { HubEpisode, HubShot } from "./Episode";
 
-// «Добро пожаловать». Three usable phrases from the long take interleaved with the cast roll call
-// (public/hub/ep0/voice.mp3 is cut from take-long.mp3 and take-names.mp3).
-// Still missing from the take: «Оплата сдельная», the sleep capsules, «Трындец Плюс».
-const VERT: [number, number] = [941, 1672];
-const SHEET: [number, number] = [1536, 1024];
-
+// «Добро пожаловать». The voice is cut by the take list in this file's history:
+// the long take, the roll call and the three phrase takes, interleaved name / perk.
 const shots: HubShot[] = [
-  // «Добро пожаловать в Трындец корпорейшн.»
-  { img: "scenes/ep0-lobby", size: VERT, from: 0, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 600, cy: 650, h: 1150 } },
-  // «Мидл Тимоша,»
-  { img: "chars/timosha", size: SHEET, from: 4.4, a: { cx: 1080, cy: 560, h: 1000 }, b: { cx: 1070, cy: 500, h: 820 } },
-  // «График гибкий: приходите когда хотите,»
-  { img: "scenes/ep4-1", size: VERT, from: 6.45, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 520, cy: 720, h: 1300 } },
-  // «уходите после релиза.»
-  { img: "scenes/ep8-3", size: VERT, from: 11.95, a: { cx: 330, cy: 900, h: 1000 }, b: { cx: 470, cy: 836, h: 1672 } },
-  // «Глеб Стартапович,»
-  { img: "chars/gleb", size: SHEET, from: 14.45, a: { cx: 380, cy: 540, h: 1024 }, b: { cx: 390, cy: 500, h: 900 } },
-  // «Снежана Вайбовна,»
-  { img: "scenes/ep6-water", size: VERT, from: 16.55, a: { cx: 520, cy: 760, h: 1350 }, b: { cx: 540, cy: 600, h: 1000 } },
-  // «Разрешаем пилить B2B SaaS по выходным.»
-  { img: "scenes/ep0-weekend", size: VERT, from: 18.8, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 520, cy: 950, h: 1250 } },
-  // «Помидор Эджайлович,»
-  { img: "chars/pomidorych", size: SHEET, from: 23.45, a: { cx: 1100, cy: 560, h: 1024 }, b: { cx: 1100, cy: 480, h: 760 } },
-  // «Жорж Скрамник.»
-  { img: "chars/zhorzh", size: VERT, from: 25.85, a: { cx: 470, cy: 600, h: 1100 }, b: { cx: 470, cy: 836, h: 1672 } },
+  {
+    img: "scenes/ep0-lobby",
+    size: [941, 1672],
+    from: 0.0,
+    a: { cx: 470, cy: 836, h: 1672 },
+    b: { cx: 600, cy: 650, h: 1150 },
+  },
+  {
+    img: "chars/timosha",
+    size: [1536, 1024],
+    from: 4.4,
+    a: { cx: 1080, cy: 560, h: 1000 },
+    b: { cx: 1070, cy: 500, h: 820 },
+  },
+  {
+    img: "scenes/ep0-cashier",
+    size: [941, 1672],
+    from: 6.4,
+    a: { cx: 470, cy: 836, h: 1672 },
+    b: { cx: 620, cy: 900, h: 1100 },
+  },
+  {
+    img: "scenes/ep4-1",
+    size: [941, 1672],
+    from: 8.7,
+    a: { cx: 470, cy: 836, h: 1672 },
+    b: { cx: 520, cy: 720, h: 1300 },
+  },
+  {
+    img: "chars/gleb",
+    size: [1536, 1024],
+    from: 16.75,
+    a: { cx: 380, cy: 540, h: 1024 },
+    b: { cx: 390, cy: 500, h: 900 },
+  },
+  {
+    img: "scenes/ep6-water",
+    size: [941, 1672],
+    from: 18.8,
+    a: { cx: 520, cy: 760, h: 1350 },
+    b: { cx: 540, cy: 600, h: 1000 },
+  },
+  {
+    img: "scenes/ep0-capsule",
+    size: [941, 1672],
+    from: 21.07,
+    a: { cx: 470, cy: 836, h: 1672 },
+    b: { cx: 380, cy: 900, h: 1150 },
+  },
+  {
+    img: "scenes/ep0-weekend",
+    size: [941, 1672],
+    from: 26.87,
+    a: { cx: 470, cy: 836, h: 1672 },
+    b: { cx: 520, cy: 950, h: 1250 },
+  },
+  {
+    img: "chars/pomidorych",
+    size: [1536, 1024],
+    from: 31.52,
+    a: { cx: 1100, cy: 560, h: 1024 },
+    b: { cx: 1100, cy: 480, h: 760 },
+  },
+  {
+    img: "chars/zhorzh",
+    size: [941, 1672],
+    from: 33.93,
+    a: { cx: 470, cy: 600, h: 1100 },
+    b: { cx: 470, cy: 836, h: 1672 },
+  },
+  {
+    img: "scenes/ep0-gift",
+    size: [941, 1672],
+    from: 36.09,
+    a: { cx: 470, cy: 836, h: 1672 },
+    b: { cx: 560, cy: 1000, h: 1150 },
+  },
 ];
 
 export const welcome: HubEpisode = {
   id: "Welcome",
   voice: "hub/ep0/voice.mp3",
-  end: 29.4,
+  end: 45.14,
   musicFrom: 72,
   shots,
   captions: [
-    { text: "Добро пожаловать", at: 0 },
+    { text: "Добро пожаловать", at: 0.0 },
     { text: "в «Трындец корпорейшн»", at: 1.8 },
     { text: "Мидл Тимоша", at: 4.55 },
-    { text: "График гибкий:", at: 6.62 },
-    { text: "приходите когда хотите,", at: 9.9 },
-    { text: "уходите после релиза", at: 12.1 },
-    { text: "Глеб Стартапович", at: 14.6 },
-    { text: "Снежана Вайбовна", at: 16.85 },
-    { text: "Разрешаем пилить", at: 19.04 },
-    { text: "B2B SaaS по выходным", at: 20.94 },
-    { text: "Помидор Эджайлович", at: 23.62 },
-    { text: "Жорж Скрамник", at: 26.04 },
+    { text: "Оплата сдельная", at: 6.55 },
+    { text: "График гибкий:", at: 8.92 },
+    { text: "приходите когда хотите,", at: 12.2 },
+    { text: "уходите после релиза", at: 14.4 },
+    { text: "Глеб Стартапович", at: 16.95 },
+    { text: "Снежана Вайбовна", at: 19.15 },
+    { text: "В офисе есть капсулы сна", at: 21.22 },
+    { text: "Домой ездить необязательно", at: 23.82 },
+    { text: "Разрешаем пилить", at: 27.14 },
+    { text: "B2B SaaS по выходным", at: 29.04 },
+    { text: "Помидор Эджайлович", at: 31.72 },
+    { text: "Жорж Скрамник", at: 34.14 },
+    { text: "Каждому сотруднику положен", at: 36.24 },
+    { text: "«Трындец Плюс» —", at: 38.66 },
+    { text: "дополнительные задачи", at: 40.46 },
+    { text: "без доплаты", at: 42.24 },
   ],
 };
