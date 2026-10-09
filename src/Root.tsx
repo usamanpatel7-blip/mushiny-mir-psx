@@ -11,6 +11,7 @@ import { pivot } from "./hub/ep5";
 import { weeding } from "./hub/ep6";
 import { testTask } from "./hub/ep8";
 import { welcome } from "./hub/ep0";
+import { LiminalComposition } from "./hub/Liminal";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ export const RemotionRoot: React.FC = () => {
       <FacesComposition />
       <VozComposition />
       {hubComposition(welcome)}
+      <LiminalComposition />
       {hubComposition(weighing)}
       {hubComposition(greenEye)}
       {hubComposition(pivot)}
