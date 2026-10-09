@@ -4,12 +4,11 @@ import type { HubEpisode, HubShot } from "./Episode";
 // (public/hub/ep0/voice.mp3 is cut from take-long.mp3 and take-names.mp3).
 // Still missing from the take: «Оплата сдельная», the sleep capsules, «Трындец Плюс».
 const VERT: [number, number] = [941, 1672];
-const WIDE: [number, number] = [1671, 941];
 const SHEET: [number, number] = [1536, 1024];
 
 const shots: HubShot[] = [
   // «Добро пожаловать в Трындец корпорейшн.»
-  { img: "scenes/ep3-1-wide", size: WIDE, from: 0, a: { cx: 1400, cy: 470, h: 941 }, b: { cx: 900, cy: 470, h: 941 } },
+  { img: "scenes/ep0-lobby", size: VERT, from: 0, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 600, cy: 650, h: 1150 } },
   // «Мидл Тимоша,»
   { img: "chars/timosha", size: SHEET, from: 4.4, a: { cx: 1080, cy: 560, h: 1000 }, b: { cx: 1070, cy: 500, h: 820 } },
   // «График гибкий: приходите когда хотите,»
