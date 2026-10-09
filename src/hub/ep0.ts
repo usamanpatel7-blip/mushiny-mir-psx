@@ -21,11 +21,11 @@ const shots: HubShot[] = [
   // «Снежана Вайбовна,»
   { img: "scenes/ep6-water", size: VERT, from: 16.55, a: { cx: 520, cy: 760, h: 1350 }, b: { cx: 540, cy: 600, h: 1000 } },
   // «Разрешаем пилить B2B SaaS по выходным.»
-  { img: "scenes/ep8-1", size: VERT, from: 18.8, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 480, cy: 900, h: 1250 } },
-  // «Помидор Джайлович,»
+  { img: "scenes/ep0-weekend", size: VERT, from: 18.8, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 520, cy: 950, h: 1250 } },
+  // «Помидор Эджайлович,»
   { img: "chars/pomidorych", size: SHEET, from: 23.45, a: { cx: 1100, cy: 560, h: 1024 }, b: { cx: 1100, cy: 480, h: 760 } },
-  // «Жорж Скрамник.» — no sheet for him yet: the whiteboard stands in
-  { img: "scenes/ep5-pigeons2", size: VERT, from: 25.85, a: { cx: 800, cy: 380, h: 760 }, b: { cx: 470, cy: 836, h: 1672 } },
+  // «Жорж Скрамник.»
+  { img: "chars/zhorzh", size: VERT, from: 25.85, a: { cx: 470, cy: 600, h: 1100 }, b: { cx: 470, cy: 836, h: 1672 } },
 ];
 
 export const welcome: HubEpisode = {
@@ -45,7 +45,7 @@ export const welcome: HubEpisode = {
     { text: "Снежана Вайбовна", at: 16.85 },
     { text: "Разрешаем пилить", at: 19.04 },
     { text: "B2B SaaS по выходным", at: 20.94 },
-    { text: "Помидор Джайлович", at: 23.62 },
+    { text: "Помидор Эджайлович", at: 23.62 },
     { text: "Жорж Скрамник", at: 26.04 },
   ],
 };

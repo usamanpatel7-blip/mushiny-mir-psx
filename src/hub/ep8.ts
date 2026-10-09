@@ -1,6 +1,6 @@
 import type { HubEpisode, HubShot } from "./Episode";
 
-// «Тестовое». The bank-in-a-jar finale still to come; until then the model bank closes it.
+// «Тестовое».
 const VERT: [number, number] = [941, 1672]; // scenes/ep8-1: Timosha building the test task as desk models
 const RAIN: [number, number] = [940, 1672];
 const SHEET: [number, number] = [1536, 1024];
@@ -23,7 +23,7 @@ const shots: HubShot[] = [
   // «Тимошу не взяли.»
   { img: "chars/timosha", size: SHEET, from: 21.35, a: { cx: 1080, cy: 560, h: 1000 }, b: { cx: 1060, cy: 480, h: 780 } },
   // «Банк работает в банке до сих пор.»
-  { img: "scenes/ep8-1", size: VERT, from: 23.1, a: { cx: 760, cy: 1000, h: 560 }, b: { cx: 760, cy: 980, h: 420 } },
+  { img: "scenes/ep8-jar", size: VERT, from: 23.1, a: { cx: 470, cy: 836, h: 1672 }, b: { cx: 560, cy: 900, h: 1100 } },
 ];
 
 export const testTask: HubEpisode = {
